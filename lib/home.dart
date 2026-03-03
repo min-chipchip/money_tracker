@@ -11,11 +11,31 @@ class MyHomeForm extends StatefulWidget {
 }
 
 class _MyHomeFormState extends State<MyHomeForm> {
+  final TextEditingController amountController = TextEditingController();
+  final TextEditingController reasonController = TextEditingController();
+  final DatabaseHelper dbHelper = DatabaseHelper(); // Database Instance
+
   DateTime selectedDate = DateTime.now();
   bool isHighlighted = false;
   int rating = 3;
 
-  // Helper to build the importance level circles
+  late String selectedCategory;
+  late String selectedAccount;
+
+  @override
+  void initState() {
+    super.initState();
+    selectedCategory = category.first;
+    selectedAccount = account.first;
+  }
+
+  @override
+  void dispose() {
+    amountController.dispose();
+    reasonController.dispose();
+    super.dispose();
+  }
+
   Widget ratingCircle(int value) {
     bool isSelected = rating >= value;
     return GestureDetector(
@@ -41,6 +61,59 @@ class _MyHomeFormState extends State<MyHomeForm> {
     );
   }
 
+  Future<void> _submitEntry() async {
+    if (amountController.text.isEmpty || double.tryParse(amountController.text) == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please enter an amount")),
+      );
+      return;
+    }
+
+    // 1. Collect all the data
+    final double amount = double.tryParse(amountController.text) ?? 0.1;
+    final String reason = reasonController.text;
+    final String date = DateFormat('yyyy-MM-dd').format(selectedDate);
+
+    // 2. Print or Save the data
+    // print("--- New Entry ---");
+    // print("Amount: $amount");
+    // print("Date: $date");
+    // print("Category: $selectedCategory");
+    // print("Account: $selectedAccount");
+    // print("Reason: $reason");
+    // print("Highlighted: $isHighlighted");
+    // print("Importance: $rating");
+
+    // Create the model
+    final transaction = TransactionModel(
+      amount: amount,
+      date: date,
+      category: selectedCategory,
+      account: selectedAccount,
+      reason: reason,
+      isHighlighted: isHighlighted ? 1 : 0,
+      rating: rating,
+    );
+
+    // Save to SQLite
+    await dbHelper.insertTransaction(transaction);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text("Entry saved to Database!"),
+        backgroundColor: Colors.green[400],
+      ),
+    );
+
+    // Clear form
+    amountController.clear();
+    reasonController.clear();
+    setState(() {
+      rating = 3;
+      isHighlighted = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -49,7 +122,7 @@ class _MyHomeFormState extends State<MyHomeForm> {
         children: <Widget>[
           // --- HEADER SECTION ---
           Padding(
-            padding: const EdgeInsets.fromLTRB(25.0, 50.0, 25.0, 0.0), // Middle ground: 50.0
+            padding: const EdgeInsets.fromLTRB(25.0, 50.0, 25.0, 0.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
@@ -67,26 +140,26 @@ class _MyHomeFormState extends State<MyHomeForm> {
 
           // --- QUESTION SECTION ---
           Padding(
-            padding: const EdgeInsets.fromLTRB(25.0, 20.0, 25.0, 0.0), // Middle ground: 20.0
+            padding: const EdgeInsets.fromLTRB(25.0, 20.0, 25.0, 0.0),
             child: Text.rich(
               TextSpan(
                 style: const TextStyle(fontSize: 16),
                 children: [
                   const TextSpan(
                     text: "What did you\n",
-                    style: TextStyle(fontSize: 35, fontWeight: FontWeight.bold), // Middle ground: 35
+                    style: TextStyle(fontSize: 35, fontWeight: FontWeight.bold),
                   ),
                   TextSpan(
                     text: "spend money ",
                     style: TextStyle(
-                      fontSize: 35, // Middle ground: 35
+                      fontSize: 35,
                       color: Colors.blue[300],
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const TextSpan(
                     text: "on?",
-                    style: TextStyle(fontSize: 35, fontWeight: FontWeight.bold), // Middle ground: 35
+                    style: TextStyle(fontSize: 35, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
@@ -95,7 +168,7 @@ class _MyHomeFormState extends State<MyHomeForm> {
 
           // --- AMOUNT & DATE ROW ---
           Padding(
-            padding: const EdgeInsets.fromLTRB(25.0, 20.0, 25.0, 0.0), // Middle ground: 20.0
+            padding: const EdgeInsets.fromLTRB(25.0, 20.0, 25.0, 0.0),
             child: IntrinsicHeight(
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -110,6 +183,7 @@ class _MyHomeFormState extends State<MyHomeForm> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: TextField(
+                              controller: amountController,
                               keyboardType: TextInputType.number,
                               style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold, fontFamily: 'Nunito'),
                               decoration: const InputDecoration(
@@ -138,7 +212,7 @@ class _MyHomeFormState extends State<MyHomeForm> {
                           if (picked != null) setState(() => selectedDate = picked);
                         },
                         child: Padding(
-                          padding: const EdgeInsets.only(top: 10), // Middle ground: 10
+                          padding: const EdgeInsets.only(top: 10),
                           child: Row(
                             children: [
                               const Icon(Icons.calendar_today, color: Colors.blue, size: 25),
@@ -160,7 +234,7 @@ class _MyHomeFormState extends State<MyHomeForm> {
 
           // --- CATEGORY & ACCOUNT ROW ---
           Padding(
-            padding: const EdgeInsets.fromLTRB(25.0, 15.0, 25.0, 0.0), // Middle ground: 15.0
+            padding: const EdgeInsets.fromLTRB(25.0, 15.0, 25.0, 0.0),
             child: IntrinsicHeight(
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -169,7 +243,11 @@ class _MyHomeFormState extends State<MyHomeForm> {
                     child: _buildInputBox(
                       label: "CATEGORY",
                       icon: Icons.category,
-                      child: _DropdownButton(category),
+                      child: _DropdownButton(
+                        currentList: category,
+                        selectedValue: selectedCategory,
+                        onChanged: (val) => setState(() => selectedCategory = val),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -177,7 +255,11 @@ class _MyHomeFormState extends State<MyHomeForm> {
                     child: _buildInputBox(
                       label: "ACCOUNT",
                       icon: Icons.account_balance_wallet,
-                      child: _DropdownButton(account),
+                      child: _DropdownButton(
+                        currentList: account,
+                        selectedValue: selectedAccount,
+                        onChanged: (val) => setState(() => selectedAccount = val),
+                      ),
                     ),
                   ),
                 ],
@@ -187,7 +269,7 @@ class _MyHomeFormState extends State<MyHomeForm> {
 
           // --- REASON SECTION ---
           Padding(
-            padding: const EdgeInsets.fromLTRB(25.0, 15.0, 25.0, 0.0), // Middle ground: 15.0
+            padding: const EdgeInsets.fromLTRB(25.0, 15.0, 25.0, 0.0),
             child: _buildInputBox(
               label: "REASON (OPTIONAL)",
               icon: Icons.create,
@@ -197,8 +279,9 @@ class _MyHomeFormState extends State<MyHomeForm> {
                   color: Colors.grey[100],
                   borderRadius: BorderRadius.circular(15),
                 ),
-                child: const TextField(
-                  decoration: InputDecoration(
+                child: TextField(
+                  controller: reasonController,
+                  decoration: const InputDecoration(
                     hintText: "e.g. Lunch with Sarah",
                     border: InputBorder.none,
                   ),
@@ -209,7 +292,7 @@ class _MyHomeFormState extends State<MyHomeForm> {
 
           // --- HIGHLIGHT & IMPORTANCE ROW ---
           Padding(
-            padding: const EdgeInsets.fromLTRB(25.0, 15.0, 25.0, 0.0), // Middle ground: 15.0
+            padding: const EdgeInsets.fromLTRB(25.0, 15.0, 25.0, 0.0),
             child: IntrinsicHeight(
               child: Row(
                 children: [
@@ -256,9 +339,9 @@ class _MyHomeFormState extends State<MyHomeForm> {
 
           // --- SUBMIT BUTTON ---
           Padding(
-            padding: const EdgeInsets.fromLTRB(25, 20, 25, 20), // Middle ground: 20.0 top
+            padding: const EdgeInsets.fromLTRB(25, 20, 25, 20),
             child: ElevatedButton(
-              onPressed: () => print("Submitted"),
+              onPressed: _submitEntry,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(35.0)),
@@ -280,10 +363,9 @@ class _MyHomeFormState extends State<MyHomeForm> {
     );
   }
 
-  // Common UI Wrapper for form boxes
   Widget _buildInputBox({String? label, IconData? icon, required Widget child}) {
     return Container(
-      padding: const EdgeInsets.all(16.0), // Middle ground: 16.0
+      padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(35.0),
@@ -307,34 +389,30 @@ class _MyHomeFormState extends State<MyHomeForm> {
   }
 }
 
-// Custom reusable Dropdown component
-class _DropdownButton extends StatefulWidget {
+class _DropdownButton extends StatelessWidget {
   final List<String> currentList;
-  const _DropdownButton(this.currentList);
+  final String selectedValue;
+  final ValueChanged<String> onChanged;
 
-  @override
-  State<_DropdownButton> createState() => _DropdownButtonState();
-}
-
-class _DropdownButtonState extends State<_DropdownButton> {
-  late String dropdownValue;
-
-  @override
-  void initState() {
-    super.initState();
-    dropdownValue = widget.currentList.first;
-  }
+  const _DropdownButton({
+    required this.currentList,
+    required this.selectedValue,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
     return DropdownButton<String>(
-      value: dropdownValue,
+      value: selectedValue,
       icon: const Icon(Icons.arrow_drop_down, color: Colors.blue),
       isExpanded: true,
       underline: Container(),
       style: const TextStyle(fontSize: 21, fontWeight: FontWeight.bold, color: Colors.black, fontFamily: 'Nunito'),
-      onChanged: (val) => setState(() => dropdownValue = val!),
-      items: widget.currentList.map((e) => DropdownMenuItem(value: e, child: Text(e, overflow: TextOverflow.ellipsis))).toList(),
+      onChanged: (val) => onChanged(val!),
+      items: currentList.map((e) => DropdownMenuItem(
+        value: e, 
+        child: Text(e, overflow: TextOverflow.ellipsis),
+      )).toList(),
     );
   }
 }

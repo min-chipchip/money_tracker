@@ -8,7 +8,8 @@ import 'package:money_tracker/qna.dart';
 import 'package:money_tracker/settings.dart';
 
 void main() => runApp(MaterialApp(
-      home: Home()
+      debugShowCheckedModeBanner: false,
+      home: const Home(),
 ));
 
 class Home extends StatefulWidget {
@@ -18,55 +19,8 @@ class Home extends StatefulWidget {
   State<Home> createState() => _HomeState();
 }
 
-class _DropdownButton extends StatefulWidget {
-  final List<String> currentList;
-
-  const _DropdownButton(this.currentList);
-
-  @override
-  State<_DropdownButton> createState() => _DropdownButtonState();
-}
-
-class _DropdownButtonState extends State<_DropdownButton> {
-  late String dropdownValue;
-
-  @override
-  void initState() {
-    super.initState();
-    dropdownValue = widget.currentList.first;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return DropdownButton<String>(
-      value: dropdownValue,
-      icon: const Icon(Icons.arrow_drop_down, color: Colors.blue),
-      isExpanded: true,
-      elevation: 16,
-      style: const TextStyle(fontSize: 21, fontWeight: FontWeight.bold, fontFamily: 'Nunito', color: Colors.black),
-      underline: Container(),
-      onChanged: (String? newValue) {
-        setState(() {
-          dropdownValue = newValue!;
-        });
-      },
-      items: widget.currentList.map<DropdownMenuItem<String>>((String value) {
-        return DropdownMenuItem<String>(
-          value: value,
-          child: Text(
-            value,
-            overflow: TextOverflow.ellipsis,
-          ),
-        );
-      }).toList(),
-    );
-  }
-}
-
 class _HomeState extends State<Home> {
-  DateTime selectedDate = DateTime.now();
-  bool isHighlighted = false;
-  int rating = 3;
+  int _selectedIndex = 0; // Fixed: Defined the index variable
 
   final List<Widget> _pages = [
     const MyHomeForm(),
@@ -77,46 +31,17 @@ class _HomeState extends State<Home> {
     const MySettingsForm(),
   ];
 
-  Widget ratingCircle(int value) {
-    bool isSelected = rating >= value;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          rating = value;
-        });
-      },
-      child: Container(
-        width: 35,
-        height: 35,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: isSelected ? Colors.blue : Colors.grey[200],
-        ),
-        child: Center(
-          child: Text(
-            value.toString(),
-            style: TextStyle(
-              color: isSelected ? Colors.white : Colors.grey[600],
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
       return Scaffold(
         backgroundColor: const Color(0xFFF0F9FF),
-        body: _pages[selected_page],
+        body: _pages[_selectedIndex], // Fixed: Use _selectedIndex
 
         bottomNavigationBar: BottomNavigationBar(
-          currentIndex: selected_page,
+          currentIndex: _selectedIndex, // Fixed: Use _selectedIndex
           onTap: (int index) {
             setState(() {
-              selected_page = index;
+              _selectedIndex = index;
             });
           },
           selectedItemColor: Colors.blue,
