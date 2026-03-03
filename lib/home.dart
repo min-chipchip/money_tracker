@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:money_tracker/database.dart';
+import 'package:money_tracker/DropdownButton.dart';
 
 // The actual form for adding daily entries
 class MyHomeForm extends StatefulWidget {
@@ -69,20 +70,9 @@ class _MyHomeFormState extends State<MyHomeForm> {
       return;
     }
 
-    // 1. Collect all the data
     final double amount = double.tryParse(amountController.text) ?? 0.1;
     final String reason = reasonController.text;
     final String date = DateFormat('yyyy-MM-dd').format(selectedDate);
-
-    // 2. Print or Save the data
-    // print("--- New Entry ---");
-    // print("Amount: $amount");
-    // print("Date: $date");
-    // print("Category: $selectedCategory");
-    // print("Account: $selectedAccount");
-    // print("Reason: $reason");
-    // print("Highlighted: $isHighlighted");
-    // print("Importance: $rating");
 
     // Create the model
     final transaction = TransactionModel(
@@ -243,7 +233,7 @@ class _MyHomeFormState extends State<MyHomeForm> {
                     child: _buildInputBox(
                       label: "CATEGORY",
                       icon: Icons.category,
-                      child: _DropdownButton(
+                      child: MyDropdownButton(
                         currentList: category,
                         selectedValue: selectedCategory,
                         onChanged: (val) => setState(() => selectedCategory = val),
@@ -255,7 +245,7 @@ class _MyHomeFormState extends State<MyHomeForm> {
                     child: _buildInputBox(
                       label: "ACCOUNT",
                       icon: Icons.account_balance_wallet,
-                      child: _DropdownButton(
+                      child: MyDropdownButton(
                         currentList: account,
                         selectedValue: selectedAccount,
                         onChanged: (val) => setState(() => selectedAccount = val),
@@ -385,34 +375,6 @@ class _MyHomeFormState extends State<MyHomeForm> {
           child,
         ],
       ),
-    );
-  }
-}
-
-class _DropdownButton extends StatelessWidget {
-  final List<String> currentList;
-  final String selectedValue;
-  final ValueChanged<String> onChanged;
-
-  const _DropdownButton({
-    required this.currentList,
-    required this.selectedValue,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return DropdownButton<String>(
-      value: selectedValue,
-      icon: const Icon(Icons.arrow_drop_down, color: Colors.blue),
-      isExpanded: true,
-      underline: Container(),
-      style: const TextStyle(fontSize: 21, fontWeight: FontWeight.bold, color: Colors.black, fontFamily: 'Nunito'),
-      onChanged: (val) => onChanged(val!),
-      items: currentList.map((e) => DropdownMenuItem(
-        value: e, 
-        child: Text(e, overflow: TextOverflow.ellipsis),
-      )).toList(),
     );
   }
 }

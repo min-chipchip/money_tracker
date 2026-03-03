@@ -43,6 +43,7 @@ class TransactionModel {
 class DatabaseHelper {
   static Database? _database;
 
+  // SINGLETON PATTERN - Only open one connection at a time
   Future<Database> get database async {
     if (_database != null) return _database!;
     _database = await _initDatabase();
@@ -64,11 +65,27 @@ class DatabaseHelper {
 
   Future<void> insertTransaction(TransactionModel transaction) async {
     final db = await database;
-    print(db.path);
     await db.insert(
       'transactions',
       transaction.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<void> deleteTransaction(int id) async {
+    final db = await database;
+    await db.delete(
+      'transactions',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<void> changeImportance(int id) async {
+    final db = await database;
+    await db.rawUpdate(
+      'UPDATE transactions SET isHighlighted = 1 - isHighlighted WHERE id = ?',
+      [id],
     );
   }
 
