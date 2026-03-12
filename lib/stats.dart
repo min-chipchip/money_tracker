@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:money_tracker/database.dart';
+import 'package:money_tracker/purchase_info.dart';
 
 class MyStatsPage extends StatefulWidget {
   const MyStatsPage({super.key});
@@ -76,6 +77,18 @@ class _MyStatsPageState extends State<MyStatsPage> {
                 onTapDown: _getTabPosition,
                 onLongPress: () => _showContextMenu(context, item.id!),
                 onDoubleTap: () => _showContextMenu(context, item.id!),
+                onTap: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PurchaseInfo(transaction: item),
+                    ),
+                  );
+
+                  if(result == true){
+                    setState((){});
+                  }
+                },
                 child: Card(
                   elevation: 2,
                   margin: const EdgeInsets.only(bottom: 10),

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:money_tracker/database.dart';
-import 'package:money_tracker/DropdownButton.dart';
+import 'package:money_tracker/dropdown_button.dart';
+import 'package:money_tracker/input_box.dart';
 
 // The actual form for adding daily entries
 class MyHomeForm extends StatefulWidget {
@@ -165,7 +166,7 @@ class _MyHomeFormState extends State<MyHomeForm> {
                 children: [
                   // Amount Input
                   Expanded(
-                    child: _buildInputBox(
+                    child: buildInputBox(
                       label: "AMOUNT",
                       child: Row(
                         children: [
@@ -189,7 +190,7 @@ class _MyHomeFormState extends State<MyHomeForm> {
                   const SizedBox(width: 10),
                   // Date Picker
                   Expanded(
-                    child: _buildInputBox(
+                    child: buildInputBox(
                       label: "DATE",
                       child: InkWell(
                         onTap: () async {
@@ -230,7 +231,7 @@ class _MyHomeFormState extends State<MyHomeForm> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Expanded(
-                    child: _buildInputBox(
+                    child: buildInputBox(
                       label: "CATEGORY",
                       icon: Icons.category,
                       child: MyDropdownButton(
@@ -242,7 +243,7 @@ class _MyHomeFormState extends State<MyHomeForm> {
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: _buildInputBox(
+                    child: buildInputBox(
                       label: "ACCOUNT",
                       icon: Icons.account_balance_wallet,
                       child: MyDropdownButton(
@@ -260,7 +261,7 @@ class _MyHomeFormState extends State<MyHomeForm> {
           // --- REASON SECTION ---
           Padding(
             padding: const EdgeInsets.fromLTRB(25.0, 15.0, 25.0, 0.0),
-            child: _buildInputBox(
+            child: buildInputBox(
               label: "REASON (OPTIONAL)",
               icon: Icons.create,
               child: Container(
@@ -289,7 +290,7 @@ class _MyHomeFormState extends State<MyHomeForm> {
                   // Highlight Toggle
                   Expanded(
                     flex: 3,
-                    child: _buildInputBox(
+                    child: buildInputBox(
                       child: Column(
                         children: [
                           IconButton(
@@ -309,7 +310,7 @@ class _MyHomeFormState extends State<MyHomeForm> {
                   // Importance Rating
                   Expanded(
                     flex: 5,
-                    child: _buildInputBox(
+                    child: buildInputBox(
                       child: Column(
                         children: [
                           const Text("IMPORTANCE LEVEL", style: TextStyle(color: Colors.grey, fontSize: 12)),
@@ -348,31 +349,6 @@ class _MyHomeFormState extends State<MyHomeForm> {
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInputBox({String? label, IconData? icon, required Widget child}) {
-    return Container(
-      padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(35.0),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          if (label != null)
-            Row(
-              children: [
-                if (icon != null) ...[Icon(icon, color: Colors.blue, size: 20), const SizedBox(width: 8)],
-                Text(label, style: const TextStyle(fontSize: 14, color: Colors.grey)),
-              ],
-            ),
-          if (label != null) const SizedBox(height: 4),
-          child,
         ],
       ),
     );

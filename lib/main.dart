@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:money_tracker/database.dart';
 import 'package:money_tracker/insights.dart';
 import 'package:money_tracker/receipt.dart';
 import 'package:money_tracker/stats.dart';
