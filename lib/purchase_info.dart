@@ -114,7 +114,7 @@ class _MyPurchaseInfoState extends State<PurchaseInfo>{
                         ),
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 6),
                     // Date Picker
                     Expanded(
                       child: buildInputBox(
@@ -208,7 +208,7 @@ class _MyPurchaseInfoState extends State<PurchaseInfo>{
 
             // --- HIGHLIGHT & IMPORTANCE ROW ---
             Padding(
-              padding: const EdgeInsets.fromLTRB(25.0, 15.0, 25.0, 0.0),
+              padding: const EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 0.0),
               child: IntrinsicHeight(
                 child: Row(
                   children: [
@@ -216,18 +216,20 @@ class _MyPurchaseInfoState extends State<PurchaseInfo>{
                     Expanded(
                       flex: 3,
                       child: buildInputBox(
-                        child: Column(
-                          children: [
-                            IconButton(
-                              icon: Icon(
-                                Icons.star,
-                                color: isHighlighted ? Colors.yellow[800] : Colors.grey[400],
-                                size: 35,
-                              ),
-                              onPressed: () => setState(() => isHighlighted = !isHighlighted),
-                            ),
-                            const Text("Highlight", style: TextStyle(fontWeight: FontWeight.bold)),
-                          ],
+                        child: Center(
+                            child: Column(
+                              children: [
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.star,
+                                    color: isHighlighted ? Colors.yellow[800] : Colors.grey[400],
+                                    size: 35,
+                                  ),
+                                  onPressed: () => setState(() => isHighlighted = !isHighlighted),
+                                ),
+                                const Text("Highlight", style: TextStyle(fontWeight: FontWeight.bold)),
+                              ],
+                           ),
                         ),
                       ),
                     ),

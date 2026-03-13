@@ -306,7 +306,7 @@ class _MyHomeFormState extends State<MyHomeForm> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 8),
                   // Importance Rating
                   Expanded(
                     flex: 5,
