@@ -91,7 +91,10 @@ class DatabaseHelper {
 
   Future<List<TransactionModel>> getTransactions() async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query('transactions');
+    final List<Map<String, dynamic>> maps = await db.query(
+        'transactions',
+        orderBy: 'isHighlighted DESC, date DESC, rating DESC, amount DESC',
+    );
     return List.generate(maps.length, (i) {
       return TransactionModel(
         id: maps[i]['id'],
