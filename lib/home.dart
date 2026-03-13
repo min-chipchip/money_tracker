@@ -291,18 +291,20 @@ class _MyHomeFormState extends State<MyHomeForm> {
                   Expanded(
                     flex: 3,
                     child: buildInputBox(
-                      child: Column(
-                        children: [
-                          IconButton(
-                            icon: Icon(
-                              Icons.star,
-                              color: isHighlighted ? Colors.yellow[800] : Colors.grey[400],
-                              size: 35,
+                      child: Center(
+                          child: Column(
+                          children: [
+                            IconButton(
+                              icon: Icon(
+                                Icons.star,
+                                color: isHighlighted ? Colors.yellow[800] : Colors.grey[400],
+                                size: 35,
+                              ),
+                              onPressed: () => setState(() => isHighlighted = !isHighlighted),
                             ),
-                            onPressed: () => setState(() => isHighlighted = !isHighlighted),
-                          ),
-                          const Text("Highlight", style: TextStyle(fontWeight: FontWeight.bold)),
-                        ],
+                            const Text("Highlight", style: TextStyle(fontWeight: FontWeight.bold)),
+                          ],
+                        ),
                       ),
                     ),
                   ),
