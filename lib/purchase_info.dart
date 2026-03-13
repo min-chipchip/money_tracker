@@ -58,11 +58,31 @@ class _MyPurchaseInfoState extends State<PurchaseInfo>{
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text("PURCHASE INFO",
-              style: TextStyle(
-                fontSize: 40,
-                fontWeight: FontWeight.bold,
-                color: Colors.blue,
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context, false);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue[100],
+              ),
+              child: Text(
+                  "Return",
+                  style: TextStyle(
+                    fontSize: 20,
+                    color: Colors.black,
+                    decoration: TextDecoration.underline,
+                  )
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsetsGeometry.fromLTRB(25.0, 30.0, 25.0, 0.0),
+
+              child:Text("PURCHASE INFO",
+                style: TextStyle(
+                  fontSize: 40,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue,
+                )
               )
             ),
             Padding(
