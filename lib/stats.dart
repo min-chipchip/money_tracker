@@ -46,7 +46,6 @@ class _MyStatsPageState extends State<MyStatsPage> {
     }
 
     if (result == "importance") {
-      print("HA");
       await dbHelper.changeImportance(id);
       setState((){});
     }
@@ -97,9 +96,15 @@ class _MyStatsPageState extends State<MyStatsPage> {
                     leading: const Icon(Icons.monetization_on, color: Colors.blue),
                     title: Text("${item.category} - \$${item.amount}"),
                     subtitle: Text("${item.date} (${item.account})"),
-                    trailing: Icon(
-                      item.isHighlighted == 1 ? Icons.star : Icons.star_border,
-                      color: item.isHighlighted == 1 ? Colors.yellow[800] : Colors.grey,
+                    trailing: ElevatedButton(
+                      onPressed: (){
+                        dbHelper.changeImportance(item.id!);
+                        setState((){});
+                      },
+                      child: Icon(
+                        item.isHighlighted == 1 ? Icons.star : Icons.star_border,
+                        color: item.isHighlighted == 1 ? Colors.yellow[800] : Colors.grey,
+                      ),
                     ),
                   ),
                 ),
