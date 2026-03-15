@@ -94,8 +94,15 @@ class _MyStatsPageState extends State<MyStatsPage> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                   child: ListTile(
                     leading: const Icon(Icons.monetization_on, color: Colors.blue),
-                    title: Text("${item.category} - \$${item.amount}"),
-                    subtitle: Text("${item.date} (${item.account})"),
+                    title: Text(
+                      "${item.category} - \$${item.amount}",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                      )
+                    ),
+                    subtitle: Text(
+                        "${item.date} (${item.account})" + (item.reason.isNotEmpty ? "\n" + item.reason : ""),
+                    ),
                     trailing: ElevatedButton(
                       onPressed: (){
                         dbHelper.changeImportance(item.id!);
@@ -106,6 +113,9 @@ class _MyStatsPageState extends State<MyStatsPage> {
                         color: item.isHighlighted == 1 ? Colors.yellow[800] : Colors.grey,
                       ),
                     ),
+
+                    isThreeLine: item.reason.isNotEmpty,
+
                   ),
                 ),
               );
