@@ -14,6 +14,7 @@ class _MyStatsPageState extends State<MyStatsPage> {
   Offset _tapPosition = Offset.zero;
 
   DateTime _viewingDate = DateTime.now();
+  int _viewmode = 1;
 
   void _getTabPosition(TapDownDetails details) {
     setState(() {
@@ -59,7 +60,7 @@ class _MyStatsPageState extends State<MyStatsPage> {
 
   void _showContextMenu(BuildContext context, int id) async {
     final RenderObject? overlay = Overlay.of(context).context.findRenderObject();
-    
+
     final result = await showMenu(
       context: context,
       position: RelativeRect.fromRect(
@@ -103,14 +104,15 @@ class _MyStatsPageState extends State<MyStatsPage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  ElevatedButton(
+                  IconButton(
                     onPressed: (){
-                      _previousMonth();
+                      if(_viewmode == 1)
+                        _previousMonth();
+                      else if(_viewmode == 2)
+                        _previousYear();
+                      else _previousDay();
                     },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue[100],
-                    ),
-                    child: Icon(
+                    icon: Icon(
                       Icons.arrow_back_ios,
                       color: Colors.blue,
                     ),
@@ -124,25 +126,39 @@ class _MyStatsPageState extends State<MyStatsPage> {
                       Padding(
                         padding: const EdgeInsets.fromLTRB(40, 5, 40, 5),
                         child: Text(
-                            _viewingDate.month.toString().padLeft(2, '0') + "/" + _viewingDate.year.toString(),
+                          (_viewmode == 1 ? _viewingDate.month.toString().padLeft(2, '0') + "/" + _viewingDate.year.toString() :
+                          (_viewmode == 2 ? _viewingDate.year.toString() :
+                          _viewingDate.day.toString().padLeft(2, '0') + "/" + _viewingDate.month.toString().padLeft(2, '0') + "/" + _viewingDate.year.toString())),
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
                         )
                       )
                   ),
-                  ElevatedButton(
+                  IconButton(
                     onPressed: (){
-                      _nextMonth();
+                      if(_viewmode == 1)
+                          _nextMonth();
+                      else if(_viewmode == 2)
+                          _nextYear();
+                      else _nextDay();
                     },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue[100],
-                    ),
-                    child: Icon(
+                    icon: Icon(
                       Icons.arrow_forward_ios,
                       color: Colors.blue,
                     ),
                   ),
                 ]
               )
+            ),
+            IconButton(
+              icon: Icon(
+                Icons.settings,
+                color: Colors.blue,
+              ),
+              onPressed: (){
+                setState((){
+                  _viewmode = (_viewmode + 1) % 3;
+                });
+              },
             ),
             Expanded(
               child:
@@ -160,7 +176,11 @@ class _MyStatsPageState extends State<MyStatsPage> {
                     final transactions = (snapshot.data!).where((item){
                         try{
                           final itemDate = DateTime.parse(item.date);
-                          return itemDate.month == _viewingDate.month && itemDate.year == _viewingDate.year;
+                          if(_viewmode == 1)
+                              return itemDate.month == _viewingDate.month && itemDate.year == _viewingDate.year;
+                          if(_viewmode == 2)
+                              return itemDate.year == _viewingDate.year;
+                          return itemDate.day == _viewingDate.day && itemDate.month == _viewingDate.month && itemDate.year == _viewingDate.year;
                         } catch (e) {
                           return false;
                         }
