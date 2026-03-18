@@ -14,8 +14,14 @@ Widget buildInputBox({String? label, IconData? icon, required Widget child}) {
         if (label != null)
           Row(
             children: [
-              if (icon != null) ...[Icon(icon, color: Colors.blue, size: 20), const SizedBox(width: 8)],
-              Text(label, style: const TextStyle(fontSize: 14, color: Colors.grey)),
+              if (icon != null) ...[
+                Icon(icon, color: Colors.blue, size: 20),
+                const SizedBox(width: 8),
+              ],
+              Text(
+                label,
+                style: const TextStyle(fontSize: 14, color: Colors.grey),
+              ),
             ],
           ),
         if (label != null) const SizedBox(height: 4),

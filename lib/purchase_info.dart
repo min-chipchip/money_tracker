@@ -4,17 +4,16 @@ import 'package:money_tracker/database.dart';
 import 'package:money_tracker/input_box.dart';
 import 'package:money_tracker/dropdown_button.dart';
 
-
 class PurchaseInfo extends StatefulWidget {
   final TransactionModel transaction;
-  const PurchaseInfo({super.key, required this.transaction});
 
+  const PurchaseInfo({super.key, required this.transaction});
 
   @override
   State<PurchaseInfo> createState() => _MyPurchaseInfoState();
 }
 
-class _MyPurchaseInfoState extends State<PurchaseInfo>{
+class _MyPurchaseInfoState extends State<PurchaseInfo> {
   final DatabaseHelper dbHelper = DatabaseHelper();
 
   late TextEditingController amountController;
@@ -27,8 +26,7 @@ class _MyPurchaseInfoState extends State<PurchaseInfo>{
   late TextEditingController reasonController;
 
   @override
-
-  void initState(){
+  void initState() {
     super.initState();
     amountController = TextEditingController(
       text: widget.transaction.amount.toString(),
@@ -39,10 +37,9 @@ class _MyPurchaseInfoState extends State<PurchaseInfo>{
     isHighlighted = widget.transaction.isHighlighted > 0;
     rating = widget.transaction.rating;
     id = widget.transaction.id!;
-    reasonController = TextEditingController(
-      text: widget.transaction.reason,
-    );
+    reasonController = TextEditingController(text: widget.transaction.reason);
   }
+
   //
   @override
   void dispose() {
@@ -51,7 +48,7 @@ class _MyPurchaseInfoState extends State<PurchaseInfo>{
     super.dispose();
   }
 
-  Widget build(BuildContext context){
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF0F9FF),
       body: Center(
@@ -66,24 +63,25 @@ class _MyPurchaseInfoState extends State<PurchaseInfo>{
                 backgroundColor: Colors.blue[100],
               ),
               child: Text(
-                  "Return",
-                  style: TextStyle(
-                    fontSize: 20,
-                    color: Colors.black,
-                    decoration: TextDecoration.underline,
-                  )
+                "Return",
+                style: TextStyle(
+                  fontSize: 20,
+                  color: Colors.black,
+                  decoration: TextDecoration.underline,
+                ),
               ),
             ),
             Padding(
               padding: const EdgeInsetsGeometry.fromLTRB(25.0, 30.0, 25.0, 0.0),
 
-              child:Text("PURCHASE INFO",
+              child: Text(
+                "PURCHASE INFO",
                 style: TextStyle(
                   fontSize: 40,
                   fontWeight: FontWeight.bold,
                   color: Colors.blue,
-                )
-              )
+                ),
+              ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(25.0, 20.0, 25.0, 0.0),
@@ -97,13 +95,24 @@ class _MyPurchaseInfoState extends State<PurchaseInfo>{
                         label: "AMOUNT",
                         child: Row(
                           children: [
-                            const Text("\$", style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.blue)),
+                            const Text(
+                              "\$",
+                              style: TextStyle(
+                                fontSize: 30,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue,
+                              ),
+                            ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: TextField(
                                 controller: amountController,
                                 keyboardType: TextInputType.number,
-                                style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold, fontFamily: 'Nunito'),
+                                style: const TextStyle(
+                                  fontSize: 30,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Nunito',
+                                ),
                                 decoration: const InputDecoration(
                                   hintText: "0.00",
                                   border: InputBorder.none,
@@ -127,28 +136,37 @@ class _MyPurchaseInfoState extends State<PurchaseInfo>{
                               firstDate: DateTime(2000),
                               lastDate: DateTime(2100),
                             );
-                            if (picked != null) setState(() => selectedDate = picked);
+                            if (picked != null)
+                              setState(() => selectedDate = picked);
                           },
                           child: Padding(
                             padding: const EdgeInsets.only(top: 10),
                             child: Row(
                               children: [
-                                const Icon(Icons.calendar_today, color: Colors.blue, size: 25),
+                                const Icon(
+                                  Icons.calendar_today,
+                                  color: Colors.blue,
+                                  size: 25,
+                                ),
                                 const SizedBox(width: 8),
                                 Text(
                                   DateFormat('yy/MM/dd').format(selectedDate),
-                                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, fontFamily: 'Nunito'),
-                                    ),
-                                  ],
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'Nunito',
+                                  ),
                                 ),
-                              ),
+                              ],
                             ),
                           ),
                         ),
-                      ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
+              ),
+            ),
 
             Padding(
               padding: const EdgeInsets.fromLTRB(25.0, 15.0, 25.0, 0.0),
@@ -163,7 +181,8 @@ class _MyPurchaseInfoState extends State<PurchaseInfo>{
                         child: MyDropdownButton(
                           currentList: category,
                           selectedValue: selectedCategory,
-                          onChanged: (val) => setState(() => selectedCategory = val),
+                          onChanged: (val) =>
+                              setState(() => selectedCategory = val),
                         ),
                       ),
                     ),
@@ -175,7 +194,8 @@ class _MyPurchaseInfoState extends State<PurchaseInfo>{
                         child: MyDropdownButton(
                           currentList: account,
                           selectedValue: selectedAccount,
-                          onChanged: (val) => setState(() => selectedAccount = val),
+                          onChanged: (val) =>
+                              setState(() => selectedAccount = val),
                         ),
                       ),
                     ),
@@ -198,9 +218,7 @@ class _MyPurchaseInfoState extends State<PurchaseInfo>{
                   ),
                   child: TextField(
                     controller: reasonController,
-                    decoration: const InputDecoration(
-                      border: InputBorder.none,
-                    ),
+                    decoration: const InputDecoration(border: InputBorder.none),
                   ),
                 ),
               ),
@@ -217,19 +235,26 @@ class _MyPurchaseInfoState extends State<PurchaseInfo>{
                       flex: 3,
                       child: buildInputBox(
                         child: Center(
-                            child: Column(
-                              children: [
-                                IconButton(
-                                  icon: Icon(
-                                    Icons.star,
-                                    color: isHighlighted ? Colors.yellow[800] : Colors.grey[400],
-                                    size: 35,
-                                  ),
-                                  onPressed: () => setState(() => isHighlighted = !isHighlighted),
+                          child: Column(
+                            children: [
+                              IconButton(
+                                icon: Icon(
+                                  Icons.star,
+                                  color: isHighlighted
+                                      ? Colors.yellow[800]
+                                      : Colors.grey[400],
+                                  size: 35,
                                 ),
-                                const Text("Highlight", style: TextStyle(fontWeight: FontWeight.bold)),
-                              ],
-                           ),
+                                onPressed: () => setState(
+                                  () => isHighlighted = !isHighlighted,
+                                ),
+                              ),
+                              const Text(
+                                "Highlight",
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -240,11 +265,23 @@ class _MyPurchaseInfoState extends State<PurchaseInfo>{
                       child: buildInputBox(
                         child: Column(
                           children: [
-                            const Text("IMPORTANCE LEVEL", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                            const Text(
+                              "IMPORTANCE LEVEL",
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 12,
+                              ),
+                            ),
                             const SizedBox(height: 5),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [1, 2, 3, 4, 5].map((e) => ratingCircle(e)).toList(),
+                              children: [
+                                1,
+                                2,
+                                3,
+                                4,
+                                5,
+                              ].map((e) => ratingCircle(e)).toList(),
                             ),
                           ],
                         ),
@@ -261,7 +298,9 @@ class _MyPurchaseInfoState extends State<PurchaseInfo>{
                 onPressed: _editEntry,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(35.0)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(35.0),
+                  ),
                   padding: const EdgeInsets.symmetric(vertical: 15),
                   elevation: 0,
                 ),
@@ -270,14 +309,21 @@ class _MyPurchaseInfoState extends State<PurchaseInfo>{
                   children: [
                     Icon(Icons.check_circle, color: Colors.white),
                     SizedBox(width: 10),
-                    Text("Edit Entry", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                    Text(
+                      "Edit Entry",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ],
                 ),
               ),
             ),
           ],
-        )
-      )
+        ),
+      ),
     );
   }
 
@@ -312,13 +358,15 @@ class _MyPurchaseInfoState extends State<PurchaseInfo>{
     final String date = DateFormat('yyyy-MM-dd').format(selectedDate);
 
     TransactionModel updatedTransaction = TransactionModel(
-      id: id, //Original ID
+      id: id,
+      //Original ID
       amount: amount,
       date: date,
       category: selectedCategory,
       account: selectedAccount,
       reason: reason,
-      isHighlighted: isHighlighted ? 1 : 0, // Convert bool back to int
+      isHighlighted: isHighlighted ? 1 : 0,
+      // Convert bool back to int
       rating: rating,
     );
 

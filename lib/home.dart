@@ -64,10 +64,11 @@ class _MyHomeFormState extends State<MyHomeForm> {
   }
 
   Future<void> _submitEntry() async {
-    if (amountController.text.isEmpty || double.tryParse(amountController.text) == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please enter an amount")),
-      );
+    if (amountController.text.isEmpty ||
+        double.tryParse(amountController.text) == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Please enter an amount")));
       return;
     }
 
@@ -170,13 +171,24 @@ class _MyHomeFormState extends State<MyHomeForm> {
                       label: "AMOUNT",
                       child: Row(
                         children: [
-                          const Text("\$", style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.blue)),
+                          const Text(
+                            "\$",
+                            style: TextStyle(
+                              fontSize: 30,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue,
+                            ),
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: TextField(
                               controller: amountController,
                               keyboardType: TextInputType.number,
-                              style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold, fontFamily: 'Nunito'),
+                              style: const TextStyle(
+                                fontSize: 30,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Nunito',
+                              ),
                               decoration: const InputDecoration(
                                 hintText: "0.00",
                                 border: InputBorder.none,
@@ -200,17 +212,27 @@ class _MyHomeFormState extends State<MyHomeForm> {
                             firstDate: DateTime(2000),
                             lastDate: DateTime(2100),
                           );
-                          if (picked != null) setState(() => selectedDate = picked);
+                          if (picked != null) {
+                            setState(() => selectedDate = picked);
+                          }
                         },
                         child: Padding(
                           padding: const EdgeInsets.only(top: 10),
                           child: Row(
                             children: [
-                              const Icon(Icons.calendar_today, color: Colors.blue, size: 25),
+                              const Icon(
+                                Icons.calendar_today,
+                                color: Colors.blue,
+                                size: 25,
+                              ),
                               const SizedBox(width: 8),
                               Text(
                                 DateFormat('yy/MM/dd').format(selectedDate),
-                                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, fontFamily: 'Nunito'),
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Nunito',
+                                ),
                               ),
                             ],
                           ),
@@ -237,7 +259,8 @@ class _MyHomeFormState extends State<MyHomeForm> {
                       child: MyDropdownButton(
                         currentList: category,
                         selectedValue: selectedCategory,
-                        onChanged: (val) => setState(() => selectedCategory = val),
+                        onChanged: (val) =>
+                            setState(() => selectedCategory = val),
                       ),
                     ),
                   ),
@@ -249,7 +272,8 @@ class _MyHomeFormState extends State<MyHomeForm> {
                       child: MyDropdownButton(
                         currentList: account,
                         selectedValue: selectedAccount,
-                        onChanged: (val) => setState(() => selectedAccount = val),
+                        onChanged: (val) =>
+                            setState(() => selectedAccount = val),
                       ),
                     ),
                   ),
@@ -292,17 +316,24 @@ class _MyHomeFormState extends State<MyHomeForm> {
                     flex: 3,
                     child: buildInputBox(
                       child: Center(
-                          child: Column(
+                        child: Column(
                           children: [
                             IconButton(
                               icon: Icon(
                                 Icons.star,
-                                color: isHighlighted ? Colors.yellow[800] : Colors.grey[400],
+                                color: isHighlighted
+                                    ? Colors.yellow[800]
+                                    : Colors.grey[400],
                                 size: 35,
                               ),
-                              onPressed: () => setState(() => isHighlighted = !isHighlighted),
+                              onPressed: () => setState(
+                                () => isHighlighted = !isHighlighted,
+                              ),
                             ),
-                            const Text("Highlight", style: TextStyle(fontWeight: FontWeight.bold)),
+                            const Text(
+                              "Highlight",
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                           ],
                         ),
                       ),
@@ -315,11 +346,20 @@ class _MyHomeFormState extends State<MyHomeForm> {
                     child: buildInputBox(
                       child: Column(
                         children: [
-                          const Text("IMPORTANCE LEVEL", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                          const Text(
+                            "IMPORTANCE LEVEL",
+                            style: TextStyle(color: Colors.grey, fontSize: 12),
+                          ),
                           const SizedBox(height: 5),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [1, 2, 3, 4, 5].map((e) => ratingCircle(e)).toList(),
+                            children: [
+                              1,
+                              2,
+                              3,
+                              4,
+                              5,
+                            ].map((e) => ratingCircle(e)).toList(),
                           ),
                         ],
                       ),
@@ -337,7 +377,9 @@ class _MyHomeFormState extends State<MyHomeForm> {
               onPressed: _submitEntry,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(35.0)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(35.0),
+                ),
                 padding: const EdgeInsets.symmetric(vertical: 15),
                 elevation: 0,
               ),
@@ -346,7 +388,14 @@ class _MyHomeFormState extends State<MyHomeForm> {
                 children: [
                   Icon(Icons.check_circle, color: Colors.white),
                   SizedBox(width: 10),
-                  Text("Submit Entry", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                  Text(
+                    "Submit Entry",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ],
               ),
             ),

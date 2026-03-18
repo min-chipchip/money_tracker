@@ -2,7 +2,13 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
 // Lists for dropdowns
-List<String> category = <String>['Food', 'Drink', 'Education', 'Social Life', 'Apparels'];
+List<String> category = <String>[
+  'Food',
+  'Drink',
+  'Education',
+  'Social Life',
+  'Apparels',
+];
 List<String> account = <String>['Cash', 'Credit Card', 'Bank Account'];
 
 class TransactionModel {
@@ -74,11 +80,7 @@ class DatabaseHelper {
 
   Future<void> deleteTransaction(int id) async {
     final db = await database;
-    await db.delete(
-      'transactions',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    await db.delete('transactions', where: 'id = ?', whereArgs: [id]);
   }
 
   Future<void> changeImportance(int id) async {
@@ -92,8 +94,8 @@ class DatabaseHelper {
   Future<List<TransactionModel>> getTransactions() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
-        'transactions',
-        orderBy: 'isHighlighted DESC, date DESC, rating DESC, amount DESC',
+      'transactions',
+      orderBy: 'isHighlighted DESC, date DESC, rating DESC, amount DESC',
     );
     return List.generate(maps.length, (i) {
       return TransactionModel(
