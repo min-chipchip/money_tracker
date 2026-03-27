@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:money_tracker/database.dart';
-import 'package:money_tracker/input_box.dart';
-import 'package:money_tracker/dropdown_button.dart';
+import 'package:money_tracker/AppItem/database.dart';
+import 'package:money_tracker/AppItem/input_box.dart';
+import 'package:money_tracker/AppItem/dropdown_button.dart';
 
 class PurchaseInfo extends StatefulWidget {
   final TransactionModel transaction;

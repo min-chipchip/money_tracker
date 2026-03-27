@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:money_tracker/insights.dart';
-import 'package:money_tracker/receipt.dart';
-import 'package:money_tracker/stats.dart';
-import 'package:money_tracker/home.dart';
-import 'package:money_tracker/qna.dart';
-import 'package:money_tracker/settings.dart';
+import 'package:money_tracker/AppPages/insights.dart';
+import 'package:money_tracker/AppPages/receipt.dart';
+import 'package:money_tracker/AppPages/stats.dart';
+import 'package:money_tracker/AppPages/home.dart';
+import 'package:money_tracker/AppPages/qna.dart';
+import 'package:money_tracker/AppPages/settings.dart';
 
 void main() =>
     runApp(MaterialApp(debugShowCheckedModeBanner: false, home: const Home()));

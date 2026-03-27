@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:money_tracker/database.dart';
+import 'package:money_tracker/AppItem/database.dart';
 import 'dart:math';
 
 class MyInsightsForm extends StatefulWidget {
@@ -255,8 +255,7 @@ class _MyInsightsFormState extends State<MyInsightsForm> {
     Map<String, double> categoryTotals = {};
     total_spent = 0;
 
-    for (var item in filtered){
-      if(categoryTotals.containsKey(item.category)){
+    for (var item in filtered){      if(categoryTotals.containsKey(item.category)){
         categoryTotals[item.category] = categoryTotals[item.category]! + item.amount;
       } else {
         categoryTotals[item.category] = item.amount;
@@ -264,14 +263,14 @@ class _MyInsightsFormState extends State<MyInsightsForm> {
       total_spent = total_spent + item.amount;
     }
 
-    final List<Color> myPalette = [
-      Colors.blue, Colors.red, Colors.green, Colors.yellow, Colors.purple, Colors.orange
+    final List<Color?> myPalette = [
+      Colors.blue, Colors.red, Colors.green, Colors.yellow[800], Colors.purple, Colors.orange
     ];
 
     int colorIndex = 0; // Track the index
 
     return categoryTotals.entries.map((entry) {
-      final Color categoryColor = myPalette[colorIndex % myPalette.length];
+      final Color? categoryColor = myPalette[colorIndex % myPalette.length];
       colorIndex++; // Move to next color for next slice
 
       // Use the name of the category to pick a color so it's consistent

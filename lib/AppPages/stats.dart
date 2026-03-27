@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:money_tracker/database.dart';
-import 'package:money_tracker/purchase_info.dart';
+import 'package:money_tracker/AppItem/database.dart';
+import 'package:money_tracker/AppPages/purchase_info.dart';
 
 class MyStatsPage extends StatefulWidget {
   const MyStatsPage({super.key});

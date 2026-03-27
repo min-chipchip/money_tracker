@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:money_tracker/database.dart';
-import 'package:money_tracker/dropdown_button.dart';
-import 'package:money_tracker/input_box.dart';
+import 'package:money_tracker/AppItem/database.dart';
+import 'package:money_tracker/AppItem/dropdown_button.dart';
+import 'package:money_tracker/AppItem/input_box.dart';
 
 // The actual form for adding daily entries
 class MyHomeForm extends StatefulWidget {
@@ -20,6 +20,7 @@ class _MyHomeFormState extends State<MyHomeForm> {
   DateTime selectedDate = DateTime.now();
   bool isHighlighted = false;
   int rating = 3;
+  String selectedCurrency = 'HKD';
 
   late String selectedCategory;
   late String selectedAccount;
@@ -161,87 +162,96 @@ class _MyHomeFormState extends State<MyHomeForm> {
           // --- AMOUNT & DATE ROW ---
           Padding(
             padding: const EdgeInsets.fromLTRB(25.0, 20.0, 25.0, 0.0),
-            child: IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Amount Input
-                  Expanded(
-                    child: buildInputBox(
-                      label: "AMOUNT",
-                      child: Row(
-                        children: [
-                          const Text(
-                            "\$",
-                            style: TextStyle(
-                              fontSize: 30,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Amount Input
+                Expanded(
+                  child: buildInputBox(
+                    label: "AMOUNT",
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const SizedBox(width: 10),
+
+                        Expanded(
+                          flex: 2,
+                          child: Container(
+                            margin: const EdgeInsets.only(right: 10),
                             child: TextField(
-                              controller: amountController,
-                              keyboardType: TextInputType.number,
-                              style: const TextStyle(
-                                fontSize: 30,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'Nunito',
-                              ),
-                              decoration: const InputDecoration(
-                                hintText: "0.00",
-                                border: InputBorder.none,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  // Date Picker
-                  Expanded(
-                    child: buildInputBox(
-                      label: "DATE",
-                      child: InkWell(
-                        onTap: () async {
-                          DateTime? picked = await showDatePicker(
-                            context: context,
-                            initialDate: selectedDate,
-                            firstDate: DateTime(2000),
-                            lastDate: DateTime(2100),
-                          );
-                          if (picked != null) {
-                            setState(() => selectedDate = picked);
-                          }
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 10),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.calendar_today,
-                                color: Colors.blue,
-                                size: 25,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                DateFormat('yy/MM/dd').format(selectedDate),
+                                controller: amountController,
+                                keyboardType: TextInputType.number,
                                 style: const TextStyle(
-                                  fontSize: 22,
+                                  fontSize: 30,
                                   fontWeight: FontWeight.bold,
                                   fontFamily: 'Nunito',
                                 ),
+                                decoration: const InputDecoration(
+                                  hintText: "0.00",
+                                  border: InputBorder.none,
+                                  isDense: true,
+                                ),
                               ),
-                            ],
                           ),
+                        ),
+
+                        Expanded(
+                          flex: 1,
+                          child: MyDropdownButton(
+                            currentList: const ['HKD', 'USD'],
+                            selectedValue: selectedCurrency,
+                            onChanged: (val) =>
+                                setState(() => selectedCurrency = val),
+                            textSize: 20,
+                            hideTriangularIcon: true,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                // Date Picker
+                Expanded(
+                  child: buildInputBox(
+                    label: "DATE",
+                    child: InkWell(
+                      onTap: () async {
+                        DateTime? picked = await showDatePicker(
+                          context: context,
+                          initialDate: selectedDate,
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2100),
+                        );
+                        if (picked != null) {
+                          setState(() => selectedDate = picked);
+                        }
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 10),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.calendar_today,
+                              color: Colors.blue,
+                              size: 25,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              DateFormat('dd/MM/yy').format(selectedDate),
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Nunito',
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
 
