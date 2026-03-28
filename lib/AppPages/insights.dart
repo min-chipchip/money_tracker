@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:money_tracker/AppItem/database.dart';
-import 'dart:math';
+import 'package:money_tracker/AppItem/TextFunction.dart';
 
 class MyInsightsForm extends StatefulWidget {
   const MyInsightsForm({super.key});
@@ -76,13 +76,11 @@ class _MyInsightsFormState extends State<MyInsightsForm> {
           color: isSelected ? Colors.blue : Colors.grey[200],
         ),
         child: Center(
-          child: Text(
+          child: customText(
             value.toString(),
-            style: TextStyle(
-              color: isSelected ? Colors.white : Colors.grey[600],
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
+            color: isSelected ? Colors.white : Colors.grey[600]!,
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
           ),
         ),
       ),
@@ -97,7 +95,7 @@ class _MyInsightsFormState extends State<MyInsightsForm> {
         children: [
           // Date - Month - Year View Controller
           Padding(
-            padding: EdgeInsetsGeometry.fromLTRB(15, 5, 15, 0),
+            padding: const EdgeInsets.fromLTRB(15, 5, 15, 0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -106,13 +104,11 @@ class _MyInsightsFormState extends State<MyInsightsForm> {
                     if (_viewmode == 1) {
                       _previousMonth();
                     } else if (_viewmode == 2)
-                      // ignore: curly_braces_in_flow_control_structures
                       _previousYear();
                     else
-                      // ignore: curly_braces_in_flow_control_structures
                       _previousDay();
                   },
-                  icon: Icon(Icons.arrow_back_ios, color: Colors.blue),
+                  icon: const Icon(Icons.arrow_back_ios, color: Colors.blue),
                 ),
                 Container(
                   decoration: BoxDecoration(
@@ -121,16 +117,14 @@ class _MyInsightsFormState extends State<MyInsightsForm> {
                   ),
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(40, 5, 40, 5),
-                    child: Text(
+                    child: customText(
                       (_viewmode == 1
                           ? "${_viewingDate.month.toString().padLeft(2, '0')}/${_viewingDate.year}"
                           : (_viewmode == 2
                                 ? _viewingDate.year.toString()
                                 : "${_viewingDate.day.toString().padLeft(2, '0')}/${_viewingDate.month.toString().padLeft(2, '0')}/${_viewingDate.year}")),
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                      ),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
                     ),
                   ),
                 ),
@@ -139,18 +133,17 @@ class _MyInsightsFormState extends State<MyInsightsForm> {
                     if (_viewmode == 1) {
                       _nextMonth();
                     } else if (_viewmode == 2)
-                      // ignore: curly_braces_in_flow_control_structures
                       _nextYear();
                     else
                       _nextDay();
                   },
-                  icon: Icon(Icons.arrow_forward_ios, color: Colors.blue),
+                  icon: const Icon(Icons.arrow_forward_ios, color: Colors.blue),
                 ),
               ],
             ),
           ),
           IconButton(
-            icon: Icon(Icons.settings, color: Colors.blue),
+            icon: const Icon(Icons.settings, color: Colors.blue),
             onPressed: () {
               setState(() {
                 _viewmode = (_viewmode + 1) % 3;
@@ -166,7 +159,7 @@ class _MyInsightsFormState extends State<MyInsightsForm> {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 } else if (snapshot.hasError) {
-                  return Center(child: Text("Error: ${snapshot.error}"));
+                  return Center(child: customText("Error: ${snapshot.error}"));
                 } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return _buildEmptyState();
                 };
@@ -190,8 +183,8 @@ class _MyInsightsFormState extends State<MyInsightsForm> {
                       Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text("TOTAL", style: TextStyle(color: Colors.grey, fontSize: 30)),
-                          Text(total_spent.toString(), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 35)),
+                          customText("TOTAL", color: Colors.grey, fontSize: 30),
+                          customText(total_spent.toString(), fontWeight: FontWeight.bold, fontSize: 35),
                         ],
                       ),
                   ]
@@ -211,22 +204,16 @@ class _MyInsightsFormState extends State<MyInsightsForm> {
         children: [
           const Icon(Icons.pie_chart_rounded, size: 100, color: Colors.blue),
           const SizedBox(height: 20),
-          const Text(
+          customText(
             "No Data Yet",
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Nunito',
-            ),
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
           ),
           const SizedBox(height: 10),
-          Text(
+          customText(
             "Add some entries to see your statistics.",
-            style: TextStyle(
-              fontSize: 16,
-              fontFamily: 'Nunito',
-              color: Colors.grey[600],
-            ),
+            fontSize: 16,
+            color: Colors.grey[600]!,
           ),
         ],
       ),
@@ -280,7 +267,7 @@ class _MyInsightsFormState extends State<MyInsightsForm> {
         color: categoryColor,
         title: "${entry.key}\n\$${entry.value.toStringAsFixed(0)}",
         radius: 80,
-        titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontFamily: 'Nunito'),
       );
     }).toList();
 

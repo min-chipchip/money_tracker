@@ -20,6 +20,7 @@ class TransactionModel {
   final String reason;
   final int isHighlighted;
   final int rating;
+  final String currency;
 
   TransactionModel({
     this.id,
@@ -30,6 +31,7 @@ class TransactionModel {
     required this.reason,
     required this.isHighlighted,
     required this.rating,
+    required this.currency,
   });
 
   Map<String, dynamic> toMap() {
@@ -42,6 +44,7 @@ class TransactionModel {
       'reason': reason,
       'isHighlighted': isHighlighted,
       'rating': rating,
+      'currency': currency,
     };
   }
 }
@@ -63,7 +66,7 @@ class DatabaseHelper {
       version: 1,
       onCreate: (db, version) {
         return db.execute(
-          'CREATE TABLE transactions(id INTEGER PRIMARY KEY AUTOINCREMENT, amount REAL, date TEXT, category TEXT, account TEXT, reason TEXT, isHighlighted INTEGER, rating INTEGER)',
+          'CREATE TABLE transactions(id INTEGER PRIMARY KEY AUTOINCREMENT, amount REAL, date TEXT, category TEXT, account TEXT, reason TEXT, isHighlighted INTEGER, rating INTEGER, currency TEXT)',
         );
       },
     );
@@ -107,6 +110,7 @@ class DatabaseHelper {
         reason: maps[i]['reason'],
         isHighlighted: maps[i]['isHighlighted'],
         rating: maps[i]['rating'],
+        currency: maps[i]['currency'],
       );
     });
   }

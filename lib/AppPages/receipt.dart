@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:money_tracker/AppAPI/posts.dart';
 import 'package:money_tracker/AppAPI/remote_services.dart';
+import 'package:money_tracker/AppItem/TextFunction.dart';
 
 class MyReceiptForm extends StatefulWidget {
   const MyReceiptForm({super.key});
@@ -21,7 +22,6 @@ class _MyReceiptFormState extends State<MyReceiptForm> {
 
   getData() async{
     post = await RemoteService().getPosts();
-    print("Hi");
     if(post != null){
       setState(() {
         isLoaded = true;
@@ -33,17 +33,17 @@ class _MyReceiptFormState extends State<MyReceiptForm> {
   Widget build(BuildContext context) {
     return Visibility(
       visible: isLoaded,
+      replacement: const Center(
+        child: CircularProgressIndicator(),
+      ),
       child: ListView.builder(
         itemCount: post?.length ?? 0,
         itemBuilder: (context, index){
           return Container(
-            child: Text(post![index].title),
+            padding: const EdgeInsets.all(16),
+            child: customText(post![index].title),
           );
         },
-      ),
-
-      replacement: const Center(
-        child: CircularProgressIndicator(),
       ),
     );
   }

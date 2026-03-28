@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:money_tracker/AppItem/TextFunction.dart';
 
 class MyQnAForm extends StatefulWidget {
   const MyQnAForm({super.key});
@@ -25,13 +26,11 @@ class _MyQnAFormState extends State<MyQnAForm> {
           color: isSelected ? Colors.blue : Colors.grey[200],
         ),
         child: Center(
-          child: Text(
+          child: customText(
             value.toString(),
-            style: TextStyle(
-              color: isSelected ? Colors.white : Colors.grey[600],
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
+            color: isSelected ? Colors.white : Colors.grey[600]!,
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
           ),
         ),
       ),
@@ -51,23 +50,17 @@ class _MyQnAFormState extends State<MyQnAForm> {
               color: Colors.blue,
             ),
             const SizedBox(height: 20),
-            Text(
+            customText(
               "QnA View",
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Nunito',
-                color: Colors.grey[800],
-              ),
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[800]!,
             ),
             const SizedBox(height: 10),
-            Text(
+            customText(
               "Your QnA will appear here.",
-              style: TextStyle(
-                fontSize: 16,
-                fontFamily: 'Nunito',
-                color: Colors.grey[600],
-              ),
+              fontSize: 16,
+              color: Colors.grey[600]!,
             ),
           ],
         ),
