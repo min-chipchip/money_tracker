@@ -140,7 +140,7 @@ class _MyPurchaseInfoState extends State<PurchaseInfo> {
                     Expanded(
                       flex: 1,
                       child: MyDropdownButton(
-                        currentList: const ['HKD', 'USD'],
+                        currentList: const ['HKD', 'USD', 'AUD', 'EUR', 'JPY'],
                         selectedValue: selectedCurrency,
                         onChanged: (val) => setState(() => selectedCurrency = val!),
                         textSize: 20,
