@@ -4,6 +4,8 @@ import 'package:money_tracker/AppPages/purchase_info.dart';
 import 'package:money_tracker/AppItem/TextFunction.dart';
 import 'package:money_tracker/AppAPI/currency_services.dart';
 import 'package:money_tracker/AppAPI/currency.dart';
+import 'package:money_tracker/AppAPI/currency_provider.dart';
+import 'package:money_tracker/AppItem/DateBar.dart';
 
 class MyStatsPage extends StatefulWidget {
   const MyStatsPage({super.key});
@@ -18,75 +20,23 @@ class _MyStatsPageState extends State<MyStatsPage> {
 
   DateTime _viewingDate = DateTime.now();
   int _viewmode = 1;
-  String currentCurrency = 'HKD';
-
-  Currency? currency;
-  bool isLoaded = false;
 
   @override
   void initState() {
     super.initState();
-    getData();
   }
 
-  getData() async {
-    print("Reload");
-    currency = await RemoteService().get();
-    print("Hi");
-    if (currency != null) {
-      setState(() {
-        isLoaded = true;
-      });
-    }
-  }
+  void nextYear() => setState(() => _viewingDate = DateTime(_viewingDate.year + 1));
+  void previousYear() => setState(() => _viewingDate = DateTime(_viewingDate.year - 1));
+  void nextMonth() => setState(() => _viewingDate = DateTime(_viewingDate.year, _viewingDate.month + 1));
+  void previousMonth() => setState(() => _viewingDate = DateTime(_viewingDate.year, _viewingDate.month - 1));
+  void nextDay() => setState(() => _viewingDate = DateTime(_viewingDate.year, _viewingDate.month, _viewingDate.day + 1));
+  void previousDay() => setState(() => _viewingDate = DateTime(_viewingDate.year, _viewingDate.month, _viewingDate.day - 1));
+
 
   void getTabPosition(TapDownDetails details) {
     setState(() {
       _tapPosition = details.globalPosition;
-    });
-  }
-
-  void nextYear() {
-    setState(() {
-      _viewingDate = DateTime(_viewingDate.year + 1);
-    });
-  }
-
-  void previousYear() {
-    setState(() {
-      _viewingDate = DateTime(_viewingDate.year - 1);
-    });
-  }
-
-  void nextMonth() {
-    setState(() {
-      _viewingDate = DateTime(_viewingDate.year, _viewingDate.month + 1);
-    });
-  }
-
-  void previousMonth() {
-    setState(() {
-      _viewingDate = DateTime(_viewingDate.year, _viewingDate.month - 1);
-    });
-  }
-
-  void nextDay() {
-    setState(() {
-      _viewingDate = DateTime(
-        _viewingDate.year,
-        _viewingDate.month,
-        _viewingDate.day + 1,
-      );
-    });
-  }
-
-  void previousDay() {
-    setState(() {
-      _viewingDate = DateTime(
-        _viewingDate.year,
-        _viewingDate.month,
-        _viewingDate.day - 1,
-      );
     });
   }
 
@@ -217,87 +167,16 @@ class _MyStatsPageState extends State<MyStatsPage> {
   }
 
   Widget _buildUpperBar() {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(15, 5, 15, 0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton(
-                onPressed: () {
-                  if (_viewmode == 1) {
-                    previousMonth();
-                  } else if (_viewmode == 2) {
-                    previousYear();
-                  } else {
-                    previousDay();
-                  }
-                },
-                icon: const Icon(Icons.arrow_back_ios, color: Colors.blue),
-              ),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.blue[200],
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(40, 5, 40, 5),
-                  child: customText(
-                    (_viewmode == 1
-                        ? "${_viewingDate.month.toString().padLeft(
-                        2, '0')}/${_viewingDate.year}"
-                        : (_viewmode == 2
-                        ? _viewingDate.year.toString()
-                        : "${_viewingDate.day.toString().padLeft(
-                        2, '0')}/${_viewingDate.month.toString().padLeft(
-                        2, '0')}/${_viewingDate.year}")),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                  ),
-                ),
-              ),
-              IconButton(
-                onPressed: () {
-                  if (_viewmode == 1) {
-                    nextMonth();
-                  } else if (_viewmode == 2) {
-                    nextYear();
-                  } else {
-                    nextDay();
-                  }
-                },
-                icon: const Icon(Icons.arrow_forward_ios, color: Colors.blue),
-              ),
-            ],
-          ),
-        ),
-
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.settings, color: Colors.blue),
-              onPressed: () {
-                setState(() {
-                  _viewmode = (_viewmode + 1) % 3;
-                });
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.attach_money, color: Colors.blue),
-              onPressed: () {
-                List<String> currencies = ['HKD', 'USD', 'EUR', 'JPY'];
-                int currentIndex = currencies.indexOf(currentCurrency);
-                setState(() {
-                  currentCurrency = currencies[(currentIndex + 1) % currencies.length];
-                });
-              },
-            )
-          ]
-          ,
-        )
-      ],
+    return MyDateBar(
+      viewingDate: _viewingDate,
+      viewmode: _viewmode,
+      onDateChanged: (newDate, newMode){
+        setState((){
+          _viewingDate = newDate;
+          _viewmode = newMode;
+        });
+      },
+      onCurrencyToggle: () => setState(() => CurrencyProvider().toggleCurrency()),
     );
   }
 
@@ -318,39 +197,41 @@ class _MyStatsPageState extends State<MyStatsPage> {
           setState(() {});
         }
       },
-      child: Card(
-        elevation: 2,
-        margin: const EdgeInsets.only(bottom: 10),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: ListTile(
-          leading: const Icon(
-            Icons.monetization_on,
-            color: Colors.blue,
-          ),
-          title: customText(
-            isLoaded ? "${item.category} - ${(item.amount / currency!.data[item.currency]!.toDouble() * currency!.data[currentCurrency]!.toDouble()).toStringAsFixed(2)} $currentCurrency"
-            : "${item.category} - ${item.amount.toStringAsFixed(2)} ${item.currency}",
+      child: _getTransactionCard(item),
+    );
+  }
 
-          fontWeight: FontWeight.bold,
-          ),
-          subtitle: customText(
-            "${item.date} (${item.account})${item.reason.isNotEmpty ? "\n${item
-                .reason}" : ""}",
-          ),
-          trailing: ElevatedButton(
-            onPressed: () {
-              dbHelper.changeImportance(item.id!);
-              setState(() {});
-            },
-            child: Icon(
-              item.isHighlighted == 1 ? Icons.star : Icons.star_border,
-              color: item.isHighlighted == 1 ? Colors.yellow[800] : Colors.grey,
-            ),
-          ),
-          isThreeLine: item.reason.isNotEmpty,
+  Widget _getTransactionCard(TransactionModel item){
+    return Card(
+      elevation: 2,
+      margin: const EdgeInsets.only(bottom: 10),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: ListTile(
+        leading: const Icon(
+          Icons.monetization_on,
+          color: Colors.blue,
         ),
+        title: customText(
+          "${item.category} - ${CurrencyProvider().convert(item.amount, item.currency)}",
+          fontWeight: FontWeight.bold,
+        ),
+        subtitle: customText(
+          "${item.date} (${item.account})${item.reason.isNotEmpty ? "\n${item
+              .reason}" : ""}",
+        ),
+        trailing: ElevatedButton(
+          onPressed: () {
+            dbHelper.changeImportance(item.id!);
+            setState(() {});
+          },
+          child: Icon(
+            item.isHighlighted == 1 ? Icons.star : Icons.star_border,
+            color: item.isHighlighted == 1 ? Colors.yellow[800] : Colors.grey,
+          ),
+        ),
+        isThreeLine: item.reason.isNotEmpty,
       ),
     );
   }

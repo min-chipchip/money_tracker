@@ -5,9 +5,14 @@ import 'package:money_tracker/AppPages/stats.dart';
 import 'package:money_tracker/AppPages/home.dart';
 import 'package:money_tracker/AppPages/qna.dart';
 import 'package:money_tracker/AppPages/settings.dart';
+import 'package:money_tracker/AppAPI/currency_provider.dart';
 
-void main() =>
-    runApp(MaterialApp(debugShowCheckedModeBanner: false, home: const Home()));
+void main() async{
+  WidgetsFlutterBinding.ensureInitialized();
+  await CurrencyProvider().init(); // Load rates once
+  runApp(MaterialApp(debugShowCheckedModeBanner: false, home: const Home()));
+}
+
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -17,7 +22,7 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  int _selectedIndex = 0; // Fixed: Defined the index variable
+  int _selectedIndex = 0;
 
   final List<Widget> _pages = [
     const MyHomeForm(),
@@ -28,15 +33,16 @@ class _HomeState extends State<Home> {
     const MySettingsForm(),
   ];
 
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF0F9FF),
-      body: _pages[_selectedIndex], // Fixed: Use _selectedIndex
+      body: _pages[_selectedIndex],
 
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
-        // Fixed: Use _selectedIndex
         onTap: (int index) {
           setState(() {
             _selectedIndex = index;

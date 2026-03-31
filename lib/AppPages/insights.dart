@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:money_tracker/AppItem/database.dart';
 import 'package:money_tracker/AppItem/TextFunction.dart';
+import 'package:money_tracker/AppItem/DateBar.dart';
+import 'package:money_tracker/AppAPI/currency_provider.dart';
 
 class MyInsightsForm extends StatefulWidget {
   const MyInsightsForm({super.key});
@@ -15,49 +17,6 @@ class _MyInsightsFormState extends State<MyInsightsForm> {
   DateTime _viewingDate = DateTime.now();
   int _viewmode = 1; double total_spent = 0;
 
-  void _nextYear() {
-    setState(() {
-      _viewingDate = DateTime(_viewingDate.year + 1);
-    });
-  }
-
-  void _previousYear() {
-    setState(() {
-      _viewingDate = DateTime(_viewingDate.year - 1);
-    });
-  }
-
-  void _nextMonth() {
-    setState(() {
-      _viewingDate = DateTime(_viewingDate.year, _viewingDate.month + 1);
-    });
-  }
-
-  void _previousMonth() {
-    setState(() {
-      _viewingDate = DateTime(_viewingDate.year, _viewingDate.month - 1);
-    });
-  }
-
-  void _nextDay() {
-    setState(() {
-      _viewingDate = DateTime(
-        _viewingDate.year,
-        _viewingDate.month,
-        _viewingDate.day + 1,
-      );
-    });
-  }
-
-  void _previousDay() {
-    setState(() {
-      _viewingDate = DateTime(
-        _viewingDate.year,
-        _viewingDate.month,
-        _viewingDate.day - 1,
-      );
-    });
-  }
 
   DateTime selectedDate = DateTime.now();
   bool isHighlighted = false;
@@ -93,62 +52,14 @@ class _MyInsightsFormState extends State<MyInsightsForm> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Date - Month - Year View Controller
-          Padding(
-            padding: const EdgeInsets.fromLTRB(15, 5, 15, 0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  onPressed: () {
-                    if (_viewmode == 1) {
-                      _previousMonth();
-                    } else if (_viewmode == 2)
-                      _previousYear();
-                    else
-                      _previousDay();
-                  },
-                  icon: const Icon(Icons.arrow_back_ios, color: Colors.blue),
-                ),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.blue[200],
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(40, 5, 40, 5),
-                    child: customText(
-                      (_viewmode == 1
-                          ? "${_viewingDate.month.toString().padLeft(2, '0')}/${_viewingDate.year}"
-                          : (_viewmode == 2
-                                ? _viewingDate.year.toString()
-                                : "${_viewingDate.day.toString().padLeft(2, '0')}/${_viewingDate.month.toString().padLeft(2, '0')}/${_viewingDate.year}")),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  onPressed: () {
-                    if (_viewmode == 1) {
-                      _nextMonth();
-                    } else if (_viewmode == 2)
-                      _nextYear();
-                    else
-                      _nextDay();
-                  },
-                  icon: const Icon(Icons.arrow_forward_ios, color: Colors.blue),
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.settings, color: Colors.blue),
-            onPressed: () {
-              setState(() {
-                _viewmode = (_viewmode + 1) % 3;
+          MyDateBar(viewingDate: _viewingDate, viewmode: _viewmode,
+            onDateChanged: (newDate, newMode){
+              setState((){
+                _viewingDate = newDate;
+                _viewmode = newMode;
               });
             },
+            onCurrencyToggle: () => setState(() => CurrencyProvider().toggleCurrency()),
           ),
 
           AspectRatio(
@@ -183,8 +94,8 @@ class _MyInsightsFormState extends State<MyInsightsForm> {
                       Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          customText("TOTAL", color: Colors.grey, fontSize: 30),
-                          customText(total_spent.toString(), fontWeight: FontWeight.bold, fontSize: 35),
+                          customText("TOTAL", color: Colors.grey, fontSize: 25),
+                          customText("${total_spent.toStringAsFixed(2)} ${CurrencyProvider().currentCurrency}", fontWeight: FontWeight.bold, fontSize: 25),
                         ],
                       ),
                   ]
@@ -227,9 +138,10 @@ class _MyInsightsFormState extends State<MyInsightsForm> {
     final filtered = transactions.where((item) {
       try {
         final itemDate = DateTime.parse(item.date);
-        if (_viewmode == 1)
+        if (_viewmode == 1) {
           return itemDate.month == _viewingDate.month &&
               itemDate.year == _viewingDate.year;
+        }
         if (_viewmode == 2) return itemDate.year == _viewingDate.year;
         return itemDate.day == _viewingDate.day &&
             itemDate.month == _viewingDate.month &&
@@ -242,12 +154,13 @@ class _MyInsightsFormState extends State<MyInsightsForm> {
     Map<String, double> categoryTotals = {};
     total_spent = 0;
 
-    for (var item in filtered){      if(categoryTotals.containsKey(item.category)){
-        categoryTotals[item.category] = categoryTotals[item.category]! + item.amount;
+    for (var item in filtered){
+      if(categoryTotals.containsKey(item.category)){
+        categoryTotals[item.category] = categoryTotals[item.category]! + CurrencyProvider().convertNum(item.amount, item.currency);
       } else {
-        categoryTotals[item.category] = item.amount;
+        categoryTotals[item.category] = CurrencyProvider().convertNum(item.amount, item.currency);
       }
-      total_spent = total_spent + item.amount;
+      total_spent = total_spent + CurrencyProvider().convertNum(item.amount, item.currency);
     }
 
     final List<Color?> myPalette = [
