@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -11,18 +13,32 @@ import 'package:money_tracker/data/repositories/transaction_repository.dart';
 import 'package:money_tracker/state/providers.dart';
 import 'package:money_tracker/state/transaction_actions.dart';
 
+/// Suggested starting values for a new transaction. Any field may be null.
+class TransactionPrefill {
+  const TransactionPrefill({this.amount, this.currency, this.date, this.categoryId, this.note});
+
+  /// In major units (12.5 means 12.50).
+  final double? amount;
+  final String? currency;
+  final DateTime? date;
+  final String? categoryId;
+  final String? note;
+}
+
 /// The one form for both adding and editing a transaction.
 ///
 /// - Add expense: `TransactionForm(onSubmit: ..., clearAfterSubmit: true)`
 /// - Add income (a deposit): `TransactionForm(type: TxType.income, ...)`
 /// - Edit: `TransactionForm(initial: existing, onSubmit: ...)` (the type
 ///   comes from the existing transaction)
+/// - From a scanned receipt: `TransactionForm(prefill: ..., onSubmit: ...)`
 ///
 /// Accounts, categories and currencies come from the database via providers.
 class TransactionForm extends ConsumerStatefulWidget {
   const TransactionForm({
     super.key,
     this.initial,
+    this.prefill,
     required this.submitLabel,
     required this.onSubmit,
     this.clearAfterSubmit = false,
@@ -31,6 +47,10 @@ class TransactionForm extends ConsumerStatefulWidget {
 
   /// The transaction being edited, or null when adding a new one.
   final MoneyTransaction? initial;
+
+  /// Suggested values for a NEW transaction (e.g. read from a receipt).
+  /// Ignored when [initial] is set.
+  final TransactionPrefill? prefill;
   final String submitLabel;
   final Future<void> Function(TransactionDraft draft) onSubmit;
   final bool clearAfterSubmit;
@@ -70,6 +90,14 @@ class _TransactionFormState extends ConsumerState<TransactionForm> {
     _accountId = t?.accountId;
     _categoryId = t?.categoryId;
     _currency = t?.currency;
+
+    final p = t == null ? widget.prefill : null;
+    if (p != null) {
+      if (p.date != null) _date = p.date!;
+      if (p.note != null) _noteController.text = p.note!;
+      _categoryId = p.categoryId;
+      _currency = p.currency;
+    }
   }
 
   @override
@@ -168,8 +196,10 @@ class _TransactionFormState extends ConsumerState<TransactionForm> {
     // e.g. its category was deleted, because a dropdown must contain its value.)
     if (!accounts.any((a) => a.a.id == _accountId)) _accountId = accounts.first.a.id;
     if (!categories.any((c) => c.id == _categoryId)) _categoryId = categories.first.id;
-    _currency ??= accounts.firstWhere((a) => a.a.id == _accountId).a.currency;
     final exponents = {for (final c in currencies) c.code: c.exponent};
+    // A suggested currency the app doesn't know falls back to the account's.
+    if (!exponents.containsKey(_currency)) _currency = null;
+    _currency ??= accounts.firstWhere((a) => a.a.id == _accountId).a.currency;
     if (!_filledInitialAmount) {
       _filledInitialAmount = true;
       final t = widget.initial;
@@ -178,6 +208,9 @@ class _TransactionFormState extends ConsumerState<TransactionForm> {
           t.amountMinor,
           exponents[t.currency] ?? 2,
         );
+      } else if (widget.prefill?.amount case final amount?) {
+        final exp = exponents[_currency] ?? 2;
+        _amountController.text = formatMinor((amount * math.pow(10, exp)).round(), exp);
       }
     }
 

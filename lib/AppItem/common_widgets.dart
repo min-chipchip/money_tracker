@@ -44,7 +44,9 @@ class PrimaryButton extends StatelessWidget {
   });
 
   final String label;
-  final VoidCallback onPressed;
+
+  /// Null shows the button disabled.
+  final VoidCallback? onPressed;
   final IconData icon;
 
   @override

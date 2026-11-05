@@ -1,14 +1,20 @@
 PODS:
+  - cunning_document_scanner (3.0.4):
+    - Flutter
   - Flutter (1.0.0)
 
 DEPENDENCIES:
+  - cunning_document_scanner (from `.symlinks/plugins/cunning_document_scanner/ios`)
   - Flutter (from `Flutter`)
 
 EXTERNAL SOURCES:
+  cunning_document_scanner:
+    :path: ".symlinks/plugins/cunning_document_scanner/ios"
   Flutter:
     :path: Flutter
 
 SPEC CHECKSUMS:
+  cunning_document_scanner: d13b3d78f609ba9e2dfde4389aad74a4827d9fd3
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
 
 PODFILE CHECKSUM: 4b015915ec662986b54bf30ab778da63f7dda016
