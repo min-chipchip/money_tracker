@@ -48,4 +48,58 @@ class SettingsRepository {
   /// Supported currencies (code, decimal places, symbol).
   Stream<List<CurrencyInfo>> watchCurrencies() =>
       (_db.select(_db.currencies)..orderBy([(c) => OrderingTerm(expression: c.code)])).watch();
+
+  /// Adds a currency together with a rough rate ("1 USD = [perUsd]"), so
+  /// amounts in it can be converted straight away, even offline.
+  ///
+  /// The rate is stored like the built-in ones: as an approximate 'seed'
+  /// rate dated 2000-01-01, the fallback for any date. Rates downloaded
+  /// later (with FX_API_KEY) are newer and take over automatically.
+  Future<void> addCurrency({
+    required String code,
+    required String symbol,
+    required int exponent,
+    required double perUsd,
+  }) async {
+    final normalized = code.trim().toUpperCase();
+    if (!RegExp(r'^[A-Z]{3}$').hasMatch(normalized)) {
+      throw const CurrencyInputError('Use the 3-letter code, e.g. VND');
+    }
+    if (exponent < 0 || exponent > 4) {
+      throw const CurrencyInputError('Decimal places must be 0 to 4');
+    }
+    if (!(perUsd > 0)) {
+      throw const CurrencyInputError('The rate must be more than 0');
+    }
+    await _db.transaction(() async {
+      final exists = await (_db.select(_db.currencies)..where((c) => c.code.equals(normalized)))
+          .getSingleOrNull();
+      if (exists != null) throw CurrencyInputError('$normalized is already set up');
+
+      await _db.into(_db.currencies).insert(
+            CurrenciesCompanion.insert(
+              code: normalized,
+              exponent: exponent,
+              symbol: symbol.trim().isEmpty ? normalized : symbol.trim(),
+            ),
+          );
+      await _db.into(_db.exchangeRates).insertOnConflictUpdate(
+            ExchangeRatesCompanion.insert(
+              rateDate: '2000-01-01',
+              quote: normalized,
+              perUsd: perUsd,
+              source: 'seed',
+              fetchedAt: DateTime.now().millisecondsSinceEpoch,
+            ),
+          );
+    });
+  }
+}
+
+/// Why a currency couldn't be added, worded for the user.
+class CurrencyInputError implements Exception {
+  const CurrencyInputError(this.message);
+  final String message;
+  @override
+  String toString() => message;
 }

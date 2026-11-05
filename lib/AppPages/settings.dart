@@ -4,6 +4,7 @@ import 'package:money_tracker/AppItem/app_theme.dart';
 import 'package:money_tracker/AppItem/common_widgets.dart';
 import 'package:money_tracker/AppItem/dropdown_button.dart';
 import 'package:money_tracker/AppPages/categories.dart';
+import 'package:money_tracker/AppPages/currencies.dart';
 import 'package:money_tracker/state/providers.dart';
 
 class MySettingsForm extends ConsumerWidget {
@@ -40,6 +41,21 @@ class MySettingsForm extends ConsumerWidget {
                         onChanged: (code) =>
                             ref.read(settingsRepositoryProvider).setMainCurrency(code),
                       ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.payments, color: AppColors.primary),
+              title: const Text('Currencies', style: AppText.strong),
+              subtitle: Text(
+                currencies.isEmpty ? ' ' : currencies.map((c) => c.code).join(' · '),
+                style: AppText.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CurrenciesPage()),
               ),
             ),
             ListTile(
