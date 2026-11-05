@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart';
 import 'package:money_tracker/data/db/app_database.dart';
 
 /// App preferences stored in the `settings` key/value table.
@@ -23,4 +24,13 @@ class SettingsRepository {
 
   /// The currency every total is reported in.
   Future<String> baseCurrency() async => await get(baseCurrencyKey) ?? 'HKD';
+
+  Stream<String> watchBaseCurrency() =>
+      (_db.select(_db.settings)..where((s) => s.key.equals(baseCurrencyKey)))
+          .watchSingleOrNull()
+          .map((row) => row?.value ?? 'HKD');
+
+  /// Supported currencies (code, decimal places, symbol).
+  Stream<List<CurrencyInfo>> watchCurrencies() =>
+      (_db.select(_db.currencies)..orderBy([(c) => OrderingTerm(expression: c.code)])).watch();
 }

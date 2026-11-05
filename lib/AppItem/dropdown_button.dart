@@ -1,24 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:money_tracker/AppItem/app_theme.dart';
 
-class MyDropdownButton extends StatelessWidget {
+/// Dropdown over any type of value. [labelOf] turns a value into the text
+/// shown, so values can be database ids while the user sees names.
+class MyDropdownButton<T> extends StatelessWidget {
   const MyDropdownButton({
     super.key,
-    required this.currentList,
-    required this.selectedValue,
+    required this.items,
+    required this.value,
     required this.onChanged,
+    this.labelOf,
     this.showArrow = true,
   });
 
-  final List<String> currentList;
-  final String selectedValue;
-  final ValueChanged<String> onChanged;
+  final List<T> items;
+  final T value;
+  final ValueChanged<T> onChanged;
+  final String Function(T value)? labelOf;
   final bool showArrow;
 
   @override
   Widget build(BuildContext context) {
-    return DropdownButton<String>(
-      value: selectedValue,
+    return DropdownButton<T>(
+      value: value,
       icon: showArrow
           ? const Icon(Icons.arrow_drop_down, color: AppColors.primary)
           : const SizedBox.shrink(),
@@ -29,13 +33,14 @@ class MyDropdownButton extends StatelessWidget {
         color: Colors.black,
         fontFamily: AppText.fontFamily,
       ),
-      onChanged: (val) => onChanged(val!),
-      items: currentList
-          .map((e) => DropdownMenuItem(
-                value: e,
-                child: Text(e, overflow: TextOverflow.ellipsis),
-              ))
-          .toList(),
+      onChanged: (val) => onChanged(val as T),
+      items: [
+        for (final item in items)
+          DropdownMenuItem(
+            value: item,
+            child: Text(labelOf?.call(item) ?? '$item', overflow: TextOverflow.ellipsis),
+          ),
+      ],
     );
   }
 }

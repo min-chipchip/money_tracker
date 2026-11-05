@@ -1,30 +1,29 @@
 import 'package:flutter/material.dart';
-import 'package:money_tracker/AppAPI/currency_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:money_tracker/AppItem/common_widgets.dart';
-import 'package:money_tracker/AppItem/database.dart';
 import 'package:money_tracker/AppItem/date_bar.dart';
 import 'package:money_tracker/AppItem/transaction_card.dart';
 import 'package:money_tracker/AppPages/purchase_info.dart';
+import 'package:money_tracker/data/db/app_database.dart';
+import 'package:money_tracker/state/display_currency.dart';
+import 'package:money_tracker/state/providers.dart';
+import 'package:money_tracker/state/view_period.dart';
 
-class MyStatsPage extends StatefulWidget {
+/// Transaction history for the selected period.
+///
+/// No setState after saving/deleting: the list is a stream from the
+/// database, so it updates itself whenever the data changes.
+class MyStatsPage extends ConsumerStatefulWidget {
   const MyStatsPage({super.key});
 
   @override
-  State<MyStatsPage> createState() => _MyStatsPageState();
+  ConsumerState<MyStatsPage> createState() => _MyStatsPageState();
 }
 
-class _MyStatsPageState extends State<MyStatsPage> {
-  final DatabaseHelper dbHelper = DatabaseHelper();
-  Offset _tapPosition = Offset.zero;
-  DateTime _viewingDate = DateTime.now();
-  ViewMode _viewMode = ViewMode.month;
+class _MyStatsPageState extends ConsumerState<MyStatsPage> {
+  Offset _tapPosition = Offset.zero; // where the context menu opens
 
-  Future<void> _toggleStar(int id) async {
-    await dbHelper.changeImportance(id);
-    setState(() {});
-  }
-
-  Future<void> _showContextMenu(int id) async {
+  Future<void> _showContextMenu(String id) async {
     final overlay = Overlay.of(context).context.findRenderObject()!;
     final result = await showMenu<String>(
       context: context,
@@ -33,70 +32,60 @@ class _MyStatsPageState extends State<MyStatsPage> {
         Offset.zero & overlay.paintBounds.size,
       ),
       items: const [
-        PopupMenuItem(value: 'erase', child: Text('Delete this entry')),
-        PopupMenuItem(value: 'importance', child: Text('Change importance')),
+        PopupMenuItem(value: 'delete', child: Text('Delete this entry')),
+        PopupMenuItem(value: 'star', child: Text('Star / unstar')),
       ],
     );
 
-    if (result == 'erase') {
-      await dbHelper.deleteTransaction(id);
-      setState(() {}); // refresh the list
-    } else if (result == 'importance') {
-      await _toggleStar(id);
-    }
+    final repo = ref.read(transactionRepositoryProvider);
+    if (result == 'delete') await repo.softDelete(id);
+    if (result == 'star') await repo.toggleStar(id);
   }
 
-  Future<void> _openDetails(TransactionModel item) async {
-    final saved = await Navigator.push<bool>(
+  void _openDetails(MoneyTransaction t) {
+    if (t.type == 'transfer') return; // the form only edits expenses for now
+    Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => PurchaseInfo(transaction: item)),
+      MaterialPageRoute(builder: (_) => PurchaseInfo(transaction: t)),
     );
-    if (saved == true) setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
+    final transactions = ref.watch(transactionsInPeriodProvider);
+    final displayCurrency = ref.watch(displayCurrencyProvider);
+    final exponents = ref.watch(currencyExponentsProvider);
+
     return SafeArea(
       child: Column(
         children: [
-          MyDateBar(
-            viewingDate: _viewingDate,
-            viewMode: _viewMode,
-            onDateChanged: (date, mode) => setState(() {
-              _viewingDate = date;
-              _viewMode = mode;
-            }),
-            onCurrencyToggle: () => setState(() => CurrencyProvider().toggleCurrency()),
-          ),
+          const MyDateBar(),
           Expanded(
-            child: FutureBuilder<List<TransactionModel>>(
-              future: dbHelper.getTransactions(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                }
-
-                final transactions = (snapshot.data ?? [])
-                    .where((t) => _viewMode.contains(_viewingDate, DateTime.parse(t.date)))
-                    .toList();
-                if (transactions.isEmpty) return const EmptyState();
-
+            child: transactions.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(child: Text('Error: $e')),
+              data: (rows) {
+                if (rows.isEmpty) return const EmptyState();
                 return ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 20),
-                  itemCount: transactions.length,
+                  itemCount: rows.length,
                   itemBuilder: (context, index) {
-                    final item = transactions[index];
+                    final item = rows[index];
                     return GestureDetector(
                       onTapDown: (details) => _tapPosition = details.globalPosition,
-                      onTap: () => _openDetails(item),
-                      onLongPress: () => _showContextMenu(item.id!),
-                      onDoubleTap: () => _showContextMenu(item.id!),
+                      onTap: () => _openDetails(item.t),
+                      onLongPress: () => _showContextMenu(item.t.id),
+                      onDoubleTap: () => _showContextMenu(item.t.id),
                       child: TransactionCard(
                         item: item,
-                        onToggleStar: () => _toggleStar(item.id!),
+                        amountText: formatForDisplay(
+                          minor: item.t.amountMinor,
+                          currency: item.t.currency,
+                          displayCurrency: displayCurrency,
+                          exponents: exponents,
+                        ),
+                        onToggleStar: () =>
+                            ref.read(transactionRepositoryProvider).toggleStar(item.t.id),
                       ),
                     );
                   },

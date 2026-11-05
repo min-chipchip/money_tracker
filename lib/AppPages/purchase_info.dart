@@ -1,32 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:money_tracker/AppItem/app_theme.dart';
 import 'package:money_tracker/AppItem/common_widgets.dart';
-import 'package:money_tracker/AppItem/database.dart';
 import 'package:money_tracker/AppItem/transaction_form.dart';
+import 'package:money_tracker/data/db/app_database.dart';
+import 'package:money_tracker/state/transaction_actions.dart';
 
 /// Edit page: the shared transaction form in "edit" mode.
-/// Pops `true` when the transaction was saved, `false` on Return.
-class PurchaseInfo extends StatelessWidget {
+class PurchaseInfo extends ConsumerWidget {
   const PurchaseInfo({super.key, required this.transaction});
 
-  final TransactionModel transaction;
-
-  Future<void> _save(BuildContext context, TransactionModel updated) async {
-    await DatabaseHelper().insertTransaction(updated); // same id → replaces the row
-    if (!context.mounted) return;
-    showAppSnackBar(context, 'Transaction updated successfully!');
-    Navigator.pop(context, true);
-  }
+  final MoneyTransaction transaction;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
           children: [
             const SizedBox(height: 50),
             ElevatedButton(
-              onPressed: () => Navigator.pop(context, false),
+              onPressed: () => Navigator.pop(context),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primarySoft,
                 foregroundColor: Colors.black,
@@ -47,7 +41,12 @@ class PurchaseInfo extends StatelessWidget {
             TransactionForm(
               initial: transaction,
               submitLabel: 'Edit Entry',
-              onSubmit: (t) => _save(context, t),
+              onSubmit: (draft) async {
+                await ref.read(transactionActionsProvider).save(draft, id: transaction.id);
+                if (!context.mounted) return;
+                showAppSnackBar(context, 'Transaction updated successfully!');
+                Navigator.pop(context);
+              },
             ),
           ],
         ),

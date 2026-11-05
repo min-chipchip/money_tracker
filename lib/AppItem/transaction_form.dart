@@ -1,16 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:money_tracker/AppItem/app_theme.dart';
 import 'package:money_tracker/AppItem/common_widgets.dart';
-import 'package:money_tracker/AppItem/database.dart';
 import 'package:money_tracker/AppItem/dropdown_button.dart';
 import 'package:money_tracker/AppItem/input_box.dart';
+import 'package:money_tracker/core/money.dart';
+import 'package:money_tracker/data/db/app_database.dart';
+import 'package:money_tracker/state/providers.dart';
+import 'package:money_tracker/state/transaction_actions.dart';
 
 /// The one form for both adding and editing a transaction.
 ///
 /// - Add:  `TransactionForm(onSubmit: ..., clearAfterSubmit: true)`
 /// - Edit: `TransactionForm(initial: existing, onSubmit: ...)`
-class TransactionForm extends StatefulWidget {
+///
+/// Accounts, categories and currencies come from the database via providers.
+class TransactionForm extends ConsumerStatefulWidget {
   const TransactionForm({
     super.key,
     this.initial,
@@ -20,71 +26,85 @@ class TransactionForm extends StatefulWidget {
   });
 
   /// The transaction being edited, or null when adding a new one.
-  final TransactionModel? initial;
+  final MoneyTransaction? initial;
   final String submitLabel;
-  final Future<void> Function(TransactionModel transaction) onSubmit;
+  final Future<void> Function(TransactionDraft draft) onSubmit;
   final bool clearAfterSubmit;
 
   @override
-  State<TransactionForm> createState() => _TransactionFormState();
+  ConsumerState<TransactionForm> createState() => _TransactionFormState();
 }
 
-class _TransactionFormState extends State<TransactionForm> {
-  late final TextEditingController _amountController;
-  late final TextEditingController _reasonController;
+class _TransactionFormState extends ConsumerState<TransactionForm> {
+  final _amountController = TextEditingController();
+  late final TextEditingController _noteController;
   late DateTime _date;
-  late String _category;
-  late String _account;
-  late String _currency;
-  late bool _isHighlighted;
-  late int _rating;
+  late bool _isStarred;
+  late int _importance;
+
+  // Filled in on the first build where the dropdown lists have loaded.
+  String? _accountId;
+  String? _categoryId;
+  String? _currency;
+  bool _filledInitialAmount = false;
 
   @override
   void initState() {
     super.initState();
     final t = widget.initial;
-    _amountController = TextEditingController(text: t?.amount.toString() ?? '');
-    _reasonController = TextEditingController(text: t?.reason ?? '');
-    _date = t != null ? DateTime.parse(t.date) : DateTime.now();
-    _category = t?.category ?? category.first;
-    _account = t?.account ?? account.first;
-    _currency = t?.currency ?? entryCurrencies.first;
-    _isHighlighted = (t?.isHighlighted ?? 0) == 1;
-    _rating = t?.rating ?? 3;
+    _noteController = TextEditingController(text: t?.note ?? '');
+    _date = t != null ? DateTime.parse(t.occurredOn) : DateTime.now();
+    _isStarred = t?.isStarred ?? false;
+    _importance = t?.importance ?? 3;
+    _accountId = t?.accountId;
+    _categoryId = t?.categoryId;
+    _currency = t?.currency;
   }
 
   @override
   void dispose() {
     _amountController.dispose();
-    _reasonController.dispose();
+    _noteController.dispose();
     super.dispose();
   }
 
-  Future<void> _submit() async {
-    final amount = double.tryParse(_amountController.text);
-    if (amount == null || amount <= 0) {
-      showAppSnackBar(context, 'Please enter an amount', isError: true);
+  Future<void> _submit(Map<String, int> exponents) async {
+    final amountMinor = parseMinor(_amountController.text, exponents[_currency] ?? 2);
+    if (amountMinor == null || amountMinor <= 0) {
+      showAppSnackBar(context, 'Please enter a valid amount', isError: true);
       return;
     }
 
-    await widget.onSubmit(TransactionModel(
-      id: widget.initial?.id,
-      amount: amount,
-      date: DateFormat('yyyy-MM-dd').format(_date),
-      category: _category,
-      account: _account,
-      reason: _reasonController.text,
-      isHighlighted: _isHighlighted ? 1 : 0,
-      rating: _rating,
-      currency: _currency,
-    ));
+    final draft = TransactionDraft(
+      accountId: _accountId!,
+      categoryId: _categoryId!,
+      amountMinor: amountMinor,
+      currency: _currency!,
+      occurredOn: _date,
+      note: _noteController.text.trim(),
+      isStarred: _isStarred,
+      importance: _importance,
+    );
+
+    try {
+      await widget.onSubmit(draft);
+    } on MissingExchangeRate catch (e) {
+      if (mounted) {
+        showAppSnackBar(
+          context,
+          'No exchange rate for ${e.currency} yet. Save in ${e.base}, or run with FX_API_KEY.',
+          isError: true,
+        );
+      }
+      return;
+    }
 
     if (!mounted || !widget.clearAfterSubmit) return;
     _amountController.clear();
-    _reasonController.clear();
+    _noteController.clear();
     setState(() {
-      _rating = 3;
-      _isHighlighted = false;
+      _importance = 3;
+      _isStarred = false;
     });
   }
 
@@ -100,21 +120,42 @@ class _TransactionFormState extends State<TransactionForm> {
 
   @override
   Widget build(BuildContext context) {
+    final accounts = ref.watch(accountsProvider).value;
+    final categories = ref.watch(expenseCategoriesProvider).value;
+    final currencies = ref.watch(currenciesProvider).value;
+    if (accounts == null || categories == null || currencies == null) {
+      return const Padding(
+        padding: EdgeInsets.all(40),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // First build with data: pick defaults and show the existing amount.
+    _accountId ??= accounts.first.a.id;
+    _categoryId ??= categories.first.id;
+    _currency ??= accounts.firstWhere((a) => a.a.id == _accountId).a.currency;
+    final exponents = {for (final c in currencies) c.code: c.exponent};
+    if (!_filledInitialAmount) {
+      _filledInitialAmount = true;
+      final t = widget.initial;
+      if (t != null) _amountController.text = formatMinor(t.amountMinor, exponents[t.currency] ?? 2);
+    }
+
     const rowGap = SizedBox(height: AppSpacing.section);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.page),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _amountAndDateRow(),
+          _amountAndDateRow([for (final c in currencies) c.code]),
           rowGap,
-          _categoryAndAccountRow(),
+          _categoryAndAccountRow(categories, [for (final a in accounts) a.a]),
           rowGap,
-          _reasonBox(),
+          _noteBox(),
           rowGap,
-          _highlightAndImportanceRow(),
+          _starAndImportanceRow(),
           const SizedBox(height: 20),
-          PrimaryButton(label: widget.submitLabel, onPressed: _submit),
+          PrimaryButton(label: widget.submitLabel, onPressed: () => _submit(exponents)),
           const SizedBox(height: 20),
         ],
       ),
@@ -135,7 +176,7 @@ class _TransactionFormState extends State<TransactionForm> {
     );
   }
 
-  Widget _amountAndDateRow() {
+  Widget _amountAndDateRow(List<String> currencyCodes) {
     return _pair(
       InputBox(
         label: 'AMOUNT',
@@ -145,6 +186,8 @@ class _TransactionFormState extends State<TransactionForm> {
               child: TextField(
                 controller: _amountController,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                // The number pad has no "Done" key: tapping elsewhere closes it.
+                onTapOutside: (_) => FocusScope.of(context).unfocus(),
                 style: AppText.amount,
                 decoration: const InputDecoration(
                   hintText: '0.00',
@@ -155,9 +198,9 @@ class _TransactionFormState extends State<TransactionForm> {
             ),
             SizedBox(
               width: 56, // fits a 3-letter currency code
-              child: MyDropdownButton(
-                currentList: entryCurrencies,
-                selectedValue: _currency,
+              child: MyDropdownButton<String>(
+                items: currencyCodes,
+                value: _currency!,
                 onChanged: (val) => setState(() => _currency = val),
                 showArrow: false,
               ),
@@ -184,30 +227,34 @@ class _TransactionFormState extends State<TransactionForm> {
     );
   }
 
-  Widget _categoryAndAccountRow() {
+  Widget _categoryAndAccountRow(List<Category> categories, List<Account> accounts) {
+    final categoryNames = {for (final c in categories) c.id: c.name};
+    final accountNames = {for (final a in accounts) a.id: a.name};
     return _pair(
       InputBox(
         label: 'CATEGORY',
         icon: Icons.category,
-        child: MyDropdownButton(
-          currentList: category,
-          selectedValue: _category,
-          onChanged: (val) => setState(() => _category = val),
+        child: MyDropdownButton<String>(
+          items: categoryNames.keys.toList(),
+          value: _categoryId!,
+          labelOf: (id) => categoryNames[id]!,
+          onChanged: (id) => setState(() => _categoryId = id),
         ),
       ),
       InputBox(
         label: 'ACCOUNT',
         icon: Icons.account_balance_wallet,
-        child: MyDropdownButton(
-          currentList: account,
-          selectedValue: _account,
-          onChanged: (val) => setState(() => _account = val),
+        child: MyDropdownButton<String>(
+          items: accountNames.keys.toList(),
+          value: _accountId!,
+          labelOf: (id) => accountNames[id]!,
+          onChanged: (id) => setState(() => _accountId = id),
         ),
       ),
     );
   }
 
-  Widget _reasonBox() {
+  Widget _noteBox() {
     return InputBox(
       label: 'REASON (OPTIONAL)',
       icon: Icons.create,
@@ -218,7 +265,8 @@ class _TransactionFormState extends State<TransactionForm> {
           borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
         ),
         child: TextField(
-          controller: _reasonController,
+          controller: _noteController,
+          onTapOutside: (_) => FocusScope.of(context).unfocus(),
           decoration: const InputDecoration(
             hintText: 'e.g. Lunch with Sarah',
             border: InputBorder.none,
@@ -228,7 +276,7 @@ class _TransactionFormState extends State<TransactionForm> {
     );
   }
 
-  Widget _highlightAndImportanceRow() {
+  Widget _starAndImportanceRow() {
     return _pair(
       leftFlex: 3,
       rightFlex: 5,
@@ -237,10 +285,10 @@ class _TransactionFormState extends State<TransactionForm> {
           child: Column(
             children: [
               StarButton(
-              isOn: _isHighlighted,
-              size: 35,
-              onPressed: () => setState(() => _isHighlighted = !_isHighlighted),
-            ),
+                isOn: _isStarred,
+                size: 35,
+                onPressed: () => setState(() => _isStarred = !_isStarred),
+              ),
               const Text('Highlight', style: AppText.strong),
             ],
           ),
@@ -251,7 +299,7 @@ class _TransactionFormState extends State<TransactionForm> {
           children: [
             const Text('IMPORTANCE LEVEL', style: AppText.caption),
             const SizedBox(height: 5),
-            RatingPicker(value: _rating, onChanged: (v) => setState(() => _rating = v)),
+            RatingPicker(value: _importance, onChanged: (v) => setState(() => _importance = v)),
           ],
         ),
       ),

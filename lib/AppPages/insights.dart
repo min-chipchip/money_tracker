@@ -1,72 +1,53 @@
+import 'dart:math' as math;
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:money_tracker/AppAPI/currency_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:money_tracker/AppItem/app_theme.dart';
 import 'package:money_tracker/AppItem/common_widgets.dart';
-import 'package:money_tracker/AppItem/database.dart';
 import 'package:money_tracker/AppItem/date_bar.dart';
+import 'package:money_tracker/data/db/app_database.dart';
+import 'package:money_tracker/state/display_currency.dart';
+import 'package:money_tracker/state/providers.dart';
+import 'package:money_tracker/state/view_period.dart';
 
-class MyInsightsForm extends StatefulWidget {
+/// Pie chart of spending per category. The totals are computed by SQL
+/// (GROUP BY in queries.drift); this page only draws them.
+class MyInsightsForm extends ConsumerWidget {
   const MyInsightsForm({super.key});
 
   @override
-  State<MyInsightsForm> createState() => _MyInsightsFormState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final totals = ref.watch(categoryTotalsInPeriodProvider);
+    final base = ref.watch(baseCurrencyProvider).value ?? 'HKD';
+    final display = ref.watch(displayCurrencyProvider);
+    final exponents = ref.watch(currencyExponentsProvider);
 
-class _MyInsightsFormState extends State<MyInsightsForm> {
-  final DatabaseHelper dbHelper = DatabaseHelper();
-  DateTime _viewingDate = DateTime.now();
-  ViewMode _viewMode = ViewMode.month;
+    // Totals are stored in the base currency; convert for display if we can.
+    final rate = liveRate(base, display);
+    final shownCurrency = rate == null ? base : display;
+    double toShown(int baseMinor) =>
+        baseMinor / math.pow(10, exponents[base] ?? 2) * (rate ?? 1);
 
-  /// Spending per category (in the selected currency) for the visible period.
-  Map<String, double> _categoryTotals(List<TransactionModel> transactions) {
-    final currency = CurrencyProvider();
-    final totals = <String, double>{};
-    for (final t in transactions) {
-      if (!_viewMode.contains(_viewingDate, DateTime.parse(t.date))) continue;
-      final value = currency.convertNum(t.amount, t.currency);
-      totals[t.category] = (totals[t.category] ?? 0) + value;
-    }
-    return totals;
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          MyDateBar(
-            viewingDate: _viewingDate,
-            viewMode: _viewMode,
-            onDateChanged: (date, mode) => setState(() {
-              _viewingDate = date;
-              _viewMode = mode;
-            }),
-            onCurrencyToggle: () => setState(() => CurrencyProvider().toggleCurrency()),
-          ),
+          const MyDateBar(),
           AspectRatio(
             aspectRatio: 1,
-            child: FutureBuilder<List<TransactionModel>>(
-              future: dbHelper.getTransactions(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                }
-
-                final totals = _categoryTotals(snapshot.data ?? []);
-                if (totals.isEmpty) return const EmptyState();
-
-                final totalSpent = totals.values.fold(0.0, (a, b) => a + b);
+            child: totals.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(child: Text('Error: $e')),
+              data: (rows) {
+                if (rows.isEmpty) return const EmptyState();
+                final grandTotal = toShown(rows.fold(0, (sum, r) => sum + (r.totalMinor ?? 0)));
                 return Stack(
                   alignment: Alignment.center,
                   children: [
                     PieChart(
                       PieChartData(
-                        sections: _sections(totals),
+                        sections: _sections(rows, toShown),
                         centerSpaceRadius: 100,
                         sectionsSpace: 2,
                       ),
@@ -76,7 +57,7 @@ class _MyInsightsFormState extends State<MyInsightsForm> {
                       children: [
                         const Text('TOTAL', style: AppText.label),
                         Text(
-                          '${totalSpent.toStringAsFixed(2)} ${CurrencyProvider().currentCurrency}',
+                          '${grandTotal.toStringAsFixed(exponents[shownCurrency] ?? 2)} $shownCurrency',
                           style: AppText.headline,
                         ),
                       ],
@@ -91,19 +72,21 @@ class _MyInsightsFormState extends State<MyInsightsForm> {
     );
   }
 
-  List<PieChartSectionData> _sections(Map<String, double> totals) {
+  List<PieChartSectionData> _sections(
+    List<CategoryTotalsResult> rows,
+    double Function(int baseMinor) toShown,
+  ) {
     // fl_chart draws text itself, so the font family must be set explicitly.
     final titleStyle = AppText.strong.copyWith(
       color: Colors.white,
       fontFamily: AppText.fontFamily,
     );
-    var i = 0;
     return [
-      for (final entry in totals.entries)
+      for (final (i, row) in rows.indexed)
         PieChartSectionData(
-          value: entry.value,
-          color: AppColors.chart[i++ % AppColors.chart.length],
-          title: '${entry.key}\n${entry.value.toStringAsFixed(0)}',
+          value: toShown(row.totalMinor ?? 0),
+          color: row.color != null ? Color(row.color!) : AppColors.chart[i % AppColors.chart.length],
+          title: '${row.name}\n${toShown(row.totalMinor ?? 0).toStringAsFixed(0)}',
           radius: 80,
           titleStyle: titleStyle,
         ),
