@@ -1,49 +1,53 @@
 import 'package:flutter/material.dart';
-import 'package:money_tracker/AppItem/TextFunction.dart';
+import 'package:intl/intl.dart';
 import 'package:money_tracker/AppAPI/currency_provider.dart';
+import 'package:money_tracker/AppItem/app_theme.dart';
+
+/// How much time the Stats / Insights pages show at once.
+enum ViewMode {
+  day,
+  month,
+  year;
+
+  /// The mode the settings button switches to: day → month → year → day.
+  ViewMode get next => values[(index + 1) % values.length];
+
+  /// Moves [date] one day/month/year forward (step = 1) or back (step = -1).
+  DateTime shift(DateTime date, int step) => switch (this) {
+        ViewMode.day => DateTime(date.year, date.month, date.day + step),
+        ViewMode.month => DateTime(date.year, date.month + step),
+        ViewMode.year => DateTime(date.year + step, date.month),
+      };
+
+  /// Whether [date] is in the same day/month/year as [viewing].
+  bool contains(DateTime viewing, DateTime date) => switch (this) {
+        ViewMode.day => date.year == viewing.year &&
+            date.month == viewing.month &&
+            date.day == viewing.day,
+        ViewMode.month => date.year == viewing.year && date.month == viewing.month,
+        ViewMode.year => date.year == viewing.year,
+      };
+
+  String format(DateTime date) => switch (this) {
+        ViewMode.day => DateFormat('dd/MM/yyyy').format(date),
+        ViewMode.month => DateFormat('MM/yyyy').format(date),
+        ViewMode.year => '${date.year}',
+      };
+}
 
 class MyDateBar extends StatelessWidget {
-  final DateTime viewingDate;
-  final int viewmode;
-  final Function(DateTime, int) onDateChanged;
-  final VoidCallback onCurrencyToggle;
-
   const MyDateBar({
     super.key,
     required this.viewingDate,
-    required this.viewmode,
+    required this.viewMode,
     required this.onDateChanged,
     required this.onCurrencyToggle,
   });
 
-  void _handleLeft() {
-    DateTime newDate;
-    if (viewmode == 1) {
-      newDate = DateTime(viewingDate.year, viewingDate.month - 1);
-    } else if (viewmode == 2) {
-      newDate = DateTime(viewingDate.year - 1, viewingDate.month);
-    } else {
-      newDate = DateTime(viewingDate.year, viewingDate.month, viewingDate.day - 1);
-    }
-    onDateChanged(newDate, viewmode);
-  }
-
-  void _handleRight() {
-    DateTime newDate;
-    if (viewmode == 1) {
-      newDate = DateTime(viewingDate.year, viewingDate.month + 1);
-    } else if (viewmode == 2) {
-      newDate = DateTime(viewingDate.year + 1, viewingDate.month);
-    } else {
-      newDate = DateTime(viewingDate.year, viewingDate.month, viewingDate.day + 1);
-    }
-    onDateChanged(newDate, viewmode);
-  }
-
-  void _handleSettings() {
-    int newMode = (viewmode + 1) % 3;
-    onDateChanged(viewingDate, newMode);
-  }
+  final DateTime viewingDate;
+  final ViewMode viewMode;
+  final void Function(DateTime date, ViewMode mode) onDateChanged;
+  final VoidCallback onCurrencyToggle;
 
   @override
   Widget build(BuildContext context) {
@@ -55,30 +59,20 @@ class MyDateBar extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               IconButton(
-                onPressed: _handleLeft,
-                icon: const Icon(Icons.arrow_back_ios, color: Colors.blue),
+                onPressed: () => onDateChanged(viewMode.shift(viewingDate, -1), viewMode),
+                icon: const Icon(Icons.arrow_back_ios, color: AppColors.primary),
               ),
               Container(
+                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 5),
                 decoration: BoxDecoration(
-                  color: Colors.blue[200],
-                  borderRadius: BorderRadius.circular(15),
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(40, 5, 40, 5),
-                  child: customText(
-                    (viewmode == 1
-                        ? "${viewingDate.month.toString().padLeft(2, '0')}/${viewingDate.year}"
-                        : (viewmode == 2
-                            ? viewingDate.year.toString()
-                            : "${viewingDate.day.toString().padLeft(2, '0')}/${viewingDate.month.toString().padLeft(2, '0')}/${viewingDate.year}")),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                  ),
-                ),
+                child: Text(viewMode.format(viewingDate), style: AppText.title),
               ),
               IconButton(
-                onPressed: _handleRight,
-                icon: const Icon(Icons.arrow_forward_ios, color: Colors.blue),
+                onPressed: () => onDateChanged(viewMode.shift(viewingDate, 1), viewMode),
+                icon: const Icon(Icons.arrow_forward_ios, color: AppColors.primary),
               ),
             ],
           ),
@@ -87,16 +81,16 @@ class MyDateBar extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             IconButton(
-              icon: const Icon(Icons.settings, color: Colors.blue),
-              onPressed: _handleSettings,
+              icon: const Icon(Icons.settings, color: AppColors.primary),
+              onPressed: () => onDateChanged(viewingDate, viewMode.next),
             ),
             IconButton(
-              icon: const Icon(Icons.attach_money, color: Colors.blue),
+              icon: const Icon(Icons.attach_money, color: AppColors.primary),
               onPressed: onCurrencyToggle,
             ),
-            customText(CurrencyProvider().currentCurrency, fontWeight: FontWeight.bold),
+            Text(CurrencyProvider().currentCurrency, style: AppText.strong),
           ],
-        )
+        ),
       ],
     );
   }

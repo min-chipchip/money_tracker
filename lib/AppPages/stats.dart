@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:money_tracker/AppItem/database.dart';
-import 'package:money_tracker/AppPages/purchase_info.dart';
-import 'package:money_tracker/AppItem/TextFunction.dart';
-import 'package:money_tracker/AppAPI/currency_services.dart';
-import 'package:money_tracker/AppAPI/currency.dart';
 import 'package:money_tracker/AppAPI/currency_provider.dart';
-import 'package:money_tracker/AppItem/DateBar.dart';
+import 'package:money_tracker/AppItem/common_widgets.dart';
+import 'package:money_tracker/AppItem/database.dart';
+import 'package:money_tracker/AppItem/date_bar.dart';
+import 'package:money_tracker/AppItem/transaction_card.dart';
+import 'package:money_tracker/AppPages/purchase_info.dart';
 
 class MyStatsPage extends StatefulWidget {
   const MyStatsPage({super.key});
@@ -17,221 +16,95 @@ class MyStatsPage extends StatefulWidget {
 class _MyStatsPageState extends State<MyStatsPage> {
   final DatabaseHelper dbHelper = DatabaseHelper();
   Offset _tapPosition = Offset.zero;
-
   DateTime _viewingDate = DateTime.now();
-  int _viewmode = 1;
+  ViewMode _viewMode = ViewMode.month;
 
-  @override
-  void initState() {
-    super.initState();
+  Future<void> _toggleStar(int id) async {
+    await dbHelper.changeImportance(id);
+    setState(() {});
   }
 
-  void nextYear() => setState(() => _viewingDate = DateTime(_viewingDate.year + 1));
-  void previousYear() => setState(() => _viewingDate = DateTime(_viewingDate.year - 1));
-  void nextMonth() => setState(() => _viewingDate = DateTime(_viewingDate.year, _viewingDate.month + 1));
-  void previousMonth() => setState(() => _viewingDate = DateTime(_viewingDate.year, _viewingDate.month - 1));
-  void nextDay() => setState(() => _viewingDate = DateTime(_viewingDate.year, _viewingDate.month, _viewingDate.day + 1));
-  void previousDay() => setState(() => _viewingDate = DateTime(_viewingDate.year, _viewingDate.month, _viewingDate.day - 1));
-
-
-  void getTabPosition(TapDownDetails details) {
-    setState(() {
-      _tapPosition = details.globalPosition;
-    });
-  }
-
-  void showContextMenu(BuildContext context, int id) async {
-    final RenderObject? overlay = Overlay
-        .of(
-      context,
-    )
-        .context
-        .findRenderObject();
-
-    final result = await showMenu(
+  Future<void> _showContextMenu(int id) async {
+    final overlay = Overlay.of(context).context.findRenderObject()!;
+    final result = await showMenu<String>(
       context: context,
       position: RelativeRect.fromRect(
         Rect.fromLTWH(_tapPosition.dx, _tapPosition.dy, 30, 30),
-        Rect.fromLTWH(
-          0,
-          0,
-          overlay!.paintBounds.size.width,
-          overlay!.paintBounds.size.height,
-        ),
+        Offset.zero & overlay.paintBounds.size,
       ),
-      items: [
-        PopupMenuItem(value: "erase", child: customText('Delete this entry')),
-        PopupMenuItem(
-          value: "importance",
-          child: customText('Change importance'),
-        ),
+      items: const [
+        PopupMenuItem(value: 'erase', child: Text('Delete this entry')),
+        PopupMenuItem(value: 'importance', child: Text('Change importance')),
       ],
     );
 
-    if (result == "erase") {
+    if (result == 'erase') {
       await dbHelper.deleteTransaction(id);
-      setState(() {}); // Refresh the list
-    }
-
-    if (result == "importance") {
-      await dbHelper.changeImportance(id);
-      setState(() {});
+      setState(() {}); // refresh the list
+    } else if (result == 'importance') {
+      await _toggleStar(id);
     }
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.pie_chart_rounded, size: 100, color: Colors.blue),
-          const SizedBox(height: 20),
-          customText(
-            "No Data Yet",
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-          const SizedBox(height: 10),
-          customText(
-            "Add some entries to see your statistics.",
-            fontSize: 16,
-            color: Colors.grey[600]!,
-          ),
-        ],
-      ),
+  Future<void> _openDetails(TransactionModel item) async {
+    final saved = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => PurchaseInfo(transaction: item)),
     );
+    if (saved == true) setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: SafeArea(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _buildUpperBar(),
-            Expanded(
-              child: FutureBuilder<List<TransactionModel>>(
-                future: dbHelper.getTransactions(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  } else if (snapshot.hasError) {
-                    return Center(
-                        child: customText("Error: ${snapshot.error}"));
-                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return _buildEmptyState();
-                  }
+    return SafeArea(
+      child: Column(
+        children: [
+          MyDateBar(
+            viewingDate: _viewingDate,
+            viewMode: _viewMode,
+            onDateChanged: (date, mode) => setState(() {
+              _viewingDate = date;
+              _viewMode = mode;
+            }),
+            onCurrencyToggle: () => setState(() => CurrencyProvider().toggleCurrency()),
+          ),
+          Expanded(
+            child: FutureBuilder<List<TransactionModel>>(
+              future: dbHelper.getTransactions(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
 
-                  final transactions = (snapshot.data!).where((item) {
-                    try {
-                      final itemDate = DateTime.parse(item.date);
-                      if (_viewmode == 1) {
-                        return itemDate.month == _viewingDate.month &&
-                            itemDate.year == _viewingDate.year;
-                      }
-                      if (_viewmode == 2) {
-                        return itemDate.year == _viewingDate.year;
-                      }
-                      return itemDate.day == _viewingDate.day &&
-                          itemDate.month == _viewingDate.month &&
-                          itemDate.year == _viewingDate.year;
-                    } catch (e) {
-                      return false;
-                    }
-                  }).toList();
+                final transactions = (snapshot.data ?? [])
+                    .where((t) => _viewMode.contains(_viewingDate, DateTime.parse(t.date)))
+                    .toList();
+                if (transactions.isEmpty) return const EmptyState();
 
-                  if (transactions.isEmpty) {
-                    return _buildEmptyState();
-                  }
-
-                  return ListView.builder(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 25.0,
-                      vertical: 20.0,
-                    ),
-                    itemCount: transactions.length,
-                    itemBuilder: (context, index) {
-                      final item = transactions[index];
-                      return _buildTransactionCard(item);
-                    },
-                  );
-                },
-              ),
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 20),
+                  itemCount: transactions.length,
+                  itemBuilder: (context, index) {
+                    final item = transactions[index];
+                    return GestureDetector(
+                      onTapDown: (details) => _tapPosition = details.globalPosition,
+                      onTap: () => _openDetails(item),
+                      onLongPress: () => _showContextMenu(item.id!),
+                      onDoubleTap: () => _showContextMenu(item.id!),
+                      child: TransactionCard(
+                        item: item,
+                        onToggleStar: () => _toggleStar(item.id!),
+                      ),
+                    );
+                  },
+                );
+              },
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildUpperBar() {
-    return MyDateBar(
-      viewingDate: _viewingDate,
-      viewmode: _viewmode,
-      onDateChanged: (newDate, newMode){
-        setState((){
-          _viewingDate = newDate;
-          _viewmode = newMode;
-        });
-      },
-      onCurrencyToggle: () => setState(() => CurrencyProvider().toggleCurrency()),
-    );
-  }
-
-  Widget _buildTransactionCard(TransactionModel item) {
-    return GestureDetector(
-      onTapDown: getTabPosition,
-      onLongPress: () => showContextMenu(context, item.id!),
-      onDoubleTap: () => showContextMenu(context, item.id!),
-      onTap: () async {
-        final result = await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => PurchaseInfo(transaction: item),
           ),
-        );
-
-        if (result == true) {
-          setState(() {});
-        }
-      },
-      child: _getTransactionCard(item),
-    );
-  }
-
-  Widget _getTransactionCard(TransactionModel item){
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.only(bottom: 10),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: ListTile(
-        leading: const Icon(
-          Icons.monetization_on,
-          color: Colors.blue,
-        ),
-        title: customText(
-          "${item.category} - ${CurrencyProvider().convert(item.amount, item.currency)}",
-          fontWeight: FontWeight.bold,
-        ),
-        subtitle: customText(
-          "${item.date} (${item.account})${item.reason.isNotEmpty ? "\n${item
-              .reason}" : ""}",
-        ),
-        trailing: ElevatedButton(
-          onPressed: () {
-            dbHelper.changeImportance(item.id!);
-            setState(() {});
-          },
-          child: Icon(
-            item.isHighlighted == 1 ? Icons.star : Icons.star_border,
-            color: item.isHighlighted == 1 ? Colors.yellow[800] : Colors.grey,
-          ),
-        ),
-        isThreeLine: item.reason.isNotEmpty,
+        ],
       ),
     );
   }

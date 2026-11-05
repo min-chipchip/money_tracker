@@ -10,6 +10,7 @@ List<String> category = <String>[
   'Apparels',
 ];
 List<String> account = <String>['Cash', 'Credit Card', 'Bank Account'];
+const List<String> entryCurrencies = <String>['HKD', 'USD', 'AUD', 'EUR', 'JPY'];
 
 class TransactionModel {
   final int? id;
@@ -114,14 +115,4 @@ class DatabaseHelper {
       );
     });
   }
-}
-
-void addCategory(List<String> currentList, String newCategory) {
-  if (!currentList.contains(newCategory)) {
-    currentList.add(newCategory);
-  }
-}
-
-void deleteCategory(List<String> currentList, String deleteCategory) {
-  currentList.remove(deleteCategory);
 }

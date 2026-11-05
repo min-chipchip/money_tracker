@@ -1,30 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:money_tracker/AppAPI/currency_services.dart';
-import 'package:money_tracker/AppItem/TextFunction.dart';
+import 'package:money_tracker/AppItem/common_widgets.dart';
 
-class MyReceiptForm extends StatefulWidget {
+class MyReceiptForm extends StatelessWidget {
   const MyReceiptForm({super.key});
 
   @override
-  State<MyReceiptForm> createState() => _MyReceiptFormState();
-}
-
-class _MyReceiptFormState extends State<MyReceiptForm> {
-  bool isLoaded = false;
-
-  @override
   Widget build(BuildContext context) {
-    return Visibility(
-      visible: isLoaded,
-      replacement: const Center(
-        child: CircularProgressIndicator(),
-      ),
-      child: Center(
-        child: customText(
-          "你好",
-          fontSize: 30,
-        )
-      ),
+    return const EmptyState(
+      icon: Icons.receipt,
+      title: 'Receipts',
+      message: 'Receipt scanning is coming soon.',
     );
   }
 }
