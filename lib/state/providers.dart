@@ -37,6 +37,10 @@ final accountsProvider =
 final expenseCategoriesProvider =
     StreamProvider((ref) => ref.watch(categoryRepositoryProvider).watchAll(kind: 'expense'));
 
+final incomeCategoriesProvider = StreamProvider(
+  (ref) => ref.watch(categoryRepositoryProvider).watchAll(kind: 'income'),
+);
+
 final currenciesProvider =
     StreamProvider((ref) => ref.watch(settingsRepositoryProvider).watchCurrencies());
 

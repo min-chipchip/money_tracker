@@ -7,13 +7,16 @@ import 'package:money_tracker/AppItem/dropdown_button.dart';
 import 'package:money_tracker/AppItem/input_box.dart';
 import 'package:money_tracker/core/money.dart';
 import 'package:money_tracker/data/db/app_database.dart';
+import 'package:money_tracker/data/repositories/transaction_repository.dart';
 import 'package:money_tracker/state/providers.dart';
 import 'package:money_tracker/state/transaction_actions.dart';
 
 /// The one form for both adding and editing a transaction.
 ///
-/// - Add:  `TransactionForm(onSubmit: ..., clearAfterSubmit: true)`
-/// - Edit: `TransactionForm(initial: existing, onSubmit: ...)`
+/// - Add expense: `TransactionForm(onSubmit: ..., clearAfterSubmit: true)`
+/// - Add income (a deposit): `TransactionForm(type: TxType.income, ...)`
+/// - Edit: `TransactionForm(initial: existing, onSubmit: ...)` (the type
+///   comes from the existing transaction)
 ///
 /// Accounts, categories and currencies come from the database via providers.
 class TransactionForm extends ConsumerStatefulWidget {
@@ -23,6 +26,7 @@ class TransactionForm extends ConsumerStatefulWidget {
     required this.submitLabel,
     required this.onSubmit,
     this.clearAfterSubmit = false,
+    this.type = TxType.expense,
   });
 
   /// The transaction being edited, or null when adding a new one.
@@ -30,6 +34,9 @@ class TransactionForm extends ConsumerStatefulWidget {
   final String submitLabel;
   final Future<void> Function(TransactionDraft draft) onSubmit;
   final bool clearAfterSubmit;
+
+  /// Expense or income, for a NEW transaction. Ignored when editing.
+  final TxType type;
 
   @override
   ConsumerState<TransactionForm> createState() => _TransactionFormState();
@@ -47,6 +54,10 @@ class _TransactionFormState extends ConsumerState<TransactionForm> {
   String? _categoryId;
   String? _currency;
   bool _filledInitialAmount = false;
+
+  TxType get _type => widget.initial != null
+      ? TxType.values.byName(widget.initial!.type)
+      : widget.type;
 
   @override
   void initState() {
@@ -79,6 +90,7 @@ class _TransactionFormState extends ConsumerState<TransactionForm> {
     }
 
     final draft = TransactionDraft(
+      type: _type,
       accountId: _accountId!,
       categoryId: _categoryId!,
       amountMinor: amountMinor,
@@ -124,7 +136,13 @@ class _TransactionFormState extends ConsumerState<TransactionForm> {
   @override
   Widget build(BuildContext context) {
     final accounts = ref.watch(accountsProvider).value;
-    final categories = ref.watch(expenseCategoriesProvider).value;
+    final categories = ref
+        .watch(
+          _type == TxType.income
+              ? incomeCategoriesProvider
+              : expenseCategoriesProvider,
+        )
+        .value;
     final currencies = ref.watch(currenciesProvider).value;
     if (accounts == null || categories == null || currencies == null) {
       return const Padding(
@@ -133,9 +151,23 @@ class _TransactionFormState extends ConsumerState<TransactionForm> {
       );
     }
 
+    if (accounts.isEmpty || categories.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(40),
+        child: Text(
+          'Add an account and a${_type == TxType.income ? 'n income' : 'n expense'} '
+          'category first.',
+          textAlign: TextAlign.center,
+          style: AppText.bodyMuted,
+        ),
+      );
+    }
+
     // First build with data: pick defaults and show the existing amount.
-    _accountId ??= accounts.first.a.id;
-    _categoryId ??= categories.first.id;
+    // (Also fall back to the first item if a saved id is no longer listed,
+    // e.g. its category was deleted, because a dropdown must contain its value.)
+    if (!accounts.any((a) => a.a.id == _accountId)) _accountId = accounts.first.a.id;
+    if (!categories.any((c) => c.id == _categoryId)) _categoryId = categories.first.id;
     _currency ??= accounts.firstWhere((a) => a.a.id == _accountId).a.currency;
     final exponents = {for (final c in currencies) c.code: c.exponent};
     if (!_filledInitialAmount) {

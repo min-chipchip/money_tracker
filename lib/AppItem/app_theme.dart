@@ -18,6 +18,7 @@ class AppColors {
   static const Color star = Color(0xFFF9A825); // yellow 800
   static const Color starOff = Color(0xFFBDBDBD); // grey 400
   static const Color success = Color(0xFF66BB6A); // green 400
+  static const Color income = Color(0xFF2E7D32); // green 800, readable as text
   static const Color error = Color(0xFFE57373); // red 300
 
   /// Pie chart slice colors, used in order.

@@ -7,6 +7,7 @@ import 'package:money_tracker/state/providers.dart';
 /// What the add/edit form produces: plain values, no database types.
 class TransactionDraft {
   const TransactionDraft({
+    this.type = TxType.expense,
     required this.accountId,
     required this.categoryId,
     required this.amountMinor,
@@ -17,6 +18,8 @@ class TransactionDraft {
     this.importance = 3,
   });
 
+  /// Expense or income (a deposit). Transfers have their own method.
+  final TxType type;
   final String accountId;
   final String categoryId;
   final int amountMinor;
@@ -52,7 +55,7 @@ class TransactionActions {
 
     if (id == null) {
       await _transactions.addEntry(
-        type: TxType.expense,
+        type: d.type,
         accountId: d.accountId,
         categoryId: d.categoryId,
         amountMinor: d.amountMinor,
@@ -66,7 +69,7 @@ class TransactionActions {
     } else {
       await _transactions.updateEntry(
         id,
-        type: TxType.expense,
+        type: d.type,
         accountId: d.accountId,
         categoryId: d.categoryId,
         amountMinor: d.amountMinor,

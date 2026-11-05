@@ -140,6 +140,48 @@ class RatingPicker extends StatelessWidget {
   }
 }
 
+/// Full-screen page with a Return button and a big blue title above [child].
+/// Used by the edit and deposit pages.
+class FormPage extends StatelessWidget {
+  const FormPage({super.key, required this.title, required this.child});
+
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            const SizedBox(height: 50),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primarySoft,
+                foregroundColor: Colors.black,
+              ),
+              child: const Text('Return', style: AppText.title),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(AppSpacing.page, 30, AppSpacing.page, 20),
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 40,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+            child,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 void showAppSnackBar(BuildContext context, String message, {bool isError = false}) {
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(

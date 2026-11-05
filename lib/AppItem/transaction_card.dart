@@ -33,7 +33,21 @@ class TransactionCard extends StatelessWidget {
           Icons.monetization_on,
           color: item.categoryColor != null ? Color(item.categoryColor!) : AppColors.primary,
         ),
-        title: Text('$title - $amountText', style: AppText.strong),
+        title: Text.rich(
+          TextSpan(
+            style: AppText.strong,
+            children: [
+              TextSpan(text: '$title - '),
+              // Deposits (income) show as "+45.00 HKD" in green.
+              t.type == 'income'
+                  ? TextSpan(
+                      text: '+$amountText',
+                      style: const TextStyle(color: AppColors.income),
+                    )
+                  : TextSpan(text: amountText),
+            ],
+          ),
+        ),
         subtitle: Text(
           '${t.occurredOn} (${item.accountName})${hasNote ? '\n${t.note}' : ''}',
           style: AppText.body,
