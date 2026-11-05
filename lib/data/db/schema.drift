@@ -1,0 +1,145 @@
+/*
+  MoneyTracker v2 schema (version 1).
+
+  This is plain SQLite. drift reads it and generates typed Dart classes
+  (run: dart run build_runner build).
+
+  Conventions (see docs/restart-plan.md, section 2):
+    id           TEXT     UUIDv7 string, generated in Dart
+    *_at         INTEGER  instant, Unix epoch milliseconds, UTC
+    deleted_at   INTEGER  soft delete; NULL = alive
+    occurred_on  TEXT     calendar date 'YYYY-MM-DD' in the user's local time
+    *_minor      INTEGER  money in the currency's smallest unit (cents)
+
+  Budgets, recurring rules and exchange rates are added in later schema
+  versions through migrations.
+*/
+
+-- How many decimal places each currency has: JPY = 0, HKD/USD/EUR/AUD = 2.
+CREATE TABLE currencies (
+  code      TEXT NOT NULL PRIMARY KEY,               -- ISO 4217, e.g. 'HKD'
+  exponent  INTEGER NOT NULL CHECK (exponent BETWEEN 0 AND 4),
+  symbol    TEXT NOT NULL
+) AS CurrencyInfo;
+
+-- Key/value preferences, e.g. base_currency = 'HKD'.
+CREATE TABLE settings (
+  "key"  TEXT NOT NULL PRIMARY KEY,
+  value  TEXT NOT NULL
+);
+
+CREATE TABLE accounts (
+  id                     TEXT NOT NULL PRIMARY KEY,
+  name                   TEXT NOT NULL CHECK (length(trim(name)) > 0),
+  kind                   TEXT NOT NULL CHECK (kind IN ('cash','bank','credit_card','e_wallet','other')),
+  currency               TEXT NOT NULL REFERENCES currencies(code),
+  opening_balance_minor  INTEGER NOT NULL DEFAULT 0,
+  archived               BOOLEAN NOT NULL DEFAULT FALSE,
+  sort_order             INTEGER NOT NULL DEFAULT 0,
+  created_at             INTEGER NOT NULL,
+  updated_at             INTEGER NOT NULL,
+  deleted_at             INTEGER
+);
+
+CREATE TABLE categories (
+  id          TEXT NOT NULL PRIMARY KEY,
+  name        TEXT NOT NULL CHECK (length(trim(name)) > 0),
+  kind        TEXT NOT NULL CHECK (kind IN ('expense','income')),
+  parent_id   TEXT REFERENCES categories(id),          -- optional sub-category
+  icon        TEXT,
+  color       INTEGER,                                 -- ARGB, e.g. 0xFF2196F3
+  archived    BOOLEAN NOT NULL DEFAULT FALSE,
+  sort_order  INTEGER NOT NULL DEFAULT 0,
+  created_at  INTEGER NOT NULL,
+  updated_at  INTEGER NOT NULL,
+  deleted_at  INTEGER
+);
+
+-- No two LIVE categories of the same kind share a name (case-insensitive).
+-- A soft-deleted "Food" must not block creating a new "Food": that's why
+-- the index is partial (WHERE deleted_at IS NULL).
+CREATE UNIQUE INDEX ux_categories_name
+  ON categories(kind, name COLLATE NOCASE)
+  WHERE deleted_at IS NULL;
+
+CREATE TABLE transactions (
+  id                 TEXT NOT NULL PRIMARY KEY,
+  type               TEXT NOT NULL CHECK (type IN ('expense','income','transfer')),
+  occurred_on        TEXT NOT NULL
+                       CHECK (occurred_on GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'),
+
+  account_id         TEXT NOT NULL REFERENCES accounts(id),
+  category_id        TEXT REFERENCES categories(id),   -- NULL for transfers
+
+  amount_minor       INTEGER NOT NULL CHECK (amount_minor > 0),  -- always positive; `type` gives direction
+  currency           TEXT NOT NULL REFERENCES currencies(code),
+
+  -- Value in the user's base currency AT THE TIME of the transaction,
+  -- so old totals don't move when exchange rates move.
+  fx_rate_to_base    REAL NOT NULL CHECK (fx_rate_to_base > 0),
+  base_amount_minor  INTEGER NOT NULL,
+
+  -- Transfers only: the account receiving the money, and how much arrived
+  -- (can differ from amount_minor if the accounts use different currencies).
+  to_account_id      TEXT REFERENCES accounts(id),
+  to_amount_minor    INTEGER,
+
+  note               TEXT NOT NULL DEFAULT '',
+  is_starred         BOOLEAN NOT NULL DEFAULT FALSE,
+  importance         INTEGER NOT NULL DEFAULT 3 CHECK (importance BETWEEN 1 AND 5),
+
+  created_at         INTEGER NOT NULL,
+  updated_at         INTEGER NOT NULL,
+  deleted_at         INTEGER,
+
+  -- Shape rules: the database itself refuses a transfer without a
+  -- destination, or an expense/income without a category.
+  CHECK (
+    (type = 'transfer'
+       AND to_account_id IS NOT NULL
+       AND to_amount_minor IS NOT NULL AND to_amount_minor > 0
+       AND to_account_id <> account_id
+       AND category_id IS NULL)
+    OR
+    (type IN ('expense','income')
+       AND to_account_id IS NULL
+       AND to_amount_minor IS NULL
+       AND category_id IS NOT NULL)
+  )
+) AS MoneyTransaction;
+
+-- Indexes match the questions the app asks most: "what happened in this
+-- date range", optionally for one account or one category.
+CREATE INDEX ix_tx_date          ON transactions(occurred_on)              WHERE deleted_at IS NULL;
+CREATE INDEX ix_tx_account_date  ON transactions(account_id, occurred_on)  WHERE deleted_at IS NULL;
+CREATE INDEX ix_tx_category_date ON transactions(category_id, occurred_on) WHERE deleted_at IS NULL;
+
+CREATE TABLE tags (
+  id          TEXT NOT NULL PRIMARY KEY,
+  name        TEXT NOT NULL CHECK (length(trim(name)) > 0),
+  created_at  INTEGER NOT NULL,
+  updated_at  INTEGER NOT NULL,
+  deleted_at  INTEGER
+);
+
+CREATE UNIQUE INDEX ux_tags_name ON tags(name COLLATE NOCASE) WHERE deleted_at IS NULL;
+
+-- Many-to-many join table: a transaction has many tags, a tag spans many
+-- transactions.
+CREATE TABLE transaction_tags (
+  transaction_id  TEXT NOT NULL REFERENCES transactions(id) ON DELETE CASCADE,
+  tag_id          TEXT NOT NULL REFERENCES tags(id)         ON DELETE CASCADE,
+  PRIMARY KEY (transaction_id, tag_id)
+);
+
+-- Every money movement, signed from the account's point of view.
+-- An account's balance = opening balance + SUM(delta_minor).
+CREATE VIEW account_movements AS
+  SELECT account_id, occurred_on,
+         CASE WHEN type = 'income' THEN amount_minor ELSE -amount_minor END AS delta_minor
+  FROM transactions
+  WHERE deleted_at IS NULL
+  UNION ALL
+  SELECT to_account_id AS account_id, occurred_on, to_amount_minor AS delta_minor
+  FROM transactions
+  WHERE type = 'transfer' AND deleted_at IS NULL;

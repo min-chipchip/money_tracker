@@ -1,0 +1,56 @@
+-- Named queries. drift turns each one into a typed Dart method on
+-- AppDatabase, e.g. `categoryTotals(start, end)` returning a Selectable
+-- you can `.get()` once or `.watch()` as a stream.
+--
+-- Date ranges are HALF-OPEN: [start, end).
+--   "November 2026" = start '2026-11-01', end '2026-12-01'
+-- No "last day of the month" math, no off-by-one bugs.
+
+import 'schema.drift';
+
+-- Transaction list for a date range, with names joined in for display.
+transactionsInRange:
+SELECT t.**,
+       a.name  AS account_name,
+       c.name  AS category_name,
+       c.color AS category_color,
+       ta.name AS to_account_name
+FROM transactions t
+INNER JOIN accounts a   ON a.id = t.account_id
+LEFT JOIN categories c  ON c.id = t.category_id
+LEFT JOIN accounts ta   ON ta.id = t.to_account_id
+WHERE t.deleted_at IS NULL
+  AND t.occurred_on >= :start AND t.occurred_on < :end
+ORDER BY t.is_starred DESC, t.occurred_on DESC, t.importance DESC, t.created_at DESC;
+
+-- Pie chart: total spent per category, in base currency.
+categoryTotals:
+SELECT c.id, c.name, c.color, SUM(t.base_amount_minor) AS total_minor
+FROM transactions t
+INNER JOIN categories c ON c.id = t.category_id
+WHERE t.type = 'expense'
+  AND t.deleted_at IS NULL
+  AND t.occurred_on >= :start AND t.occurred_on < :end
+GROUP BY c.id
+ORDER BY total_minor DESC;
+
+-- Income vs. expense per month, in base currency.
+monthlyTotals:
+SELECT substr(occurred_on, 1, 7) AS month,
+       SUM(CASE WHEN type = 'income'  THEN base_amount_minor ELSE 0 END) AS income_minor,
+       SUM(CASE WHEN type = 'expense' THEN base_amount_minor ELSE 0 END) AS expense_minor
+FROM transactions
+WHERE deleted_at IS NULL AND type <> 'transfer'
+  AND occurred_on >= :start AND occurred_on < :end
+GROUP BY month
+ORDER BY month;
+
+-- Every live account with its current balance (in the account's currency).
+accountBalances:
+SELECT a.**,
+       a.opening_balance_minor + COALESCE(SUM(m.delta_minor), 0) AS balance_minor
+FROM accounts a
+LEFT JOIN account_movements m ON m.account_id = a.id
+WHERE a.deleted_at IS NULL
+GROUP BY a.id
+ORDER BY a.sort_order, a.name;
