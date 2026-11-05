@@ -69,7 +69,10 @@ class _TransactionFormState extends ConsumerState<TransactionForm> {
   }
 
   Future<void> _submit(Map<String, int> exponents) async {
-    final amountMinor = parseMinor(_amountController.text, exponents[_currency] ?? 2);
+    final amountMinor = parseMinor(
+      _amountController.text,
+      exponents[_currency] ?? 2,
+    );
     if (amountMinor == null || amountMinor <= 0) {
       showAppSnackBar(context, 'Please enter a valid amount', isError: true);
       return;
@@ -138,7 +141,12 @@ class _TransactionFormState extends ConsumerState<TransactionForm> {
     if (!_filledInitialAmount) {
       _filledInitialAmount = true;
       final t = widget.initial;
-      if (t != null) _amountController.text = formatMinor(t.amountMinor, exponents[t.currency] ?? 2);
+      if (t != null) {
+        _amountController.text = formatMinor(
+          t.amountMinor,
+          exponents[t.currency] ?? 2,
+        );
+      }
     }
 
     const rowGap = SizedBox(height: AppSpacing.section);
@@ -155,7 +163,10 @@ class _TransactionFormState extends ConsumerState<TransactionForm> {
           rowGap,
           _starAndImportanceRow(),
           const SizedBox(height: 20),
-          PrimaryButton(label: widget.submitLabel, onPressed: () => _submit(exponents)),
+          PrimaryButton(
+            label: widget.submitLabel,
+            onPressed: () => _submit(exponents),
+          ),
           const SizedBox(height: 20),
         ],
       ),
@@ -163,7 +174,12 @@ class _TransactionFormState extends ConsumerState<TransactionForm> {
   }
 
   // Two equal-height boxes side by side.
-  Widget _pair(Widget left, Widget right, {int leftFlex = 1, int rightFlex = 1}) {
+  Widget _pair(
+    Widget left,
+    Widget right, {
+    int leftFlex = 1,
+    int rightFlex = 1,
+  }) {
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -185,7 +201,9 @@ class _TransactionFormState extends ConsumerState<TransactionForm> {
             Expanded(
               child: TextField(
                 controller: _amountController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 // The number pad has no "Done" key: tapping elsewhere closes it.
                 onTapOutside: (_) => FocusScope.of(context).unfocus(),
                 style: AppText.amount,
@@ -216,9 +234,16 @@ class _TransactionFormState extends ConsumerState<TransactionForm> {
             padding: const EdgeInsets.only(top: 10),
             child: Row(
               children: [
-                const Icon(Icons.calendar_today, color: AppColors.primary, size: 25),
+                const Icon(
+                  Icons.calendar_today,
+                  color: AppColors.primary,
+                  size: 25,
+                ),
                 const SizedBox(width: 8),
-                Text(DateFormat('dd/MM/yy').format(_date), style: AppText.title),
+                Text(
+                  DateFormat('dd/MM/yy').format(_date),
+                  style: AppText.title,
+                ),
               ],
             ),
           ),
@@ -227,7 +252,10 @@ class _TransactionFormState extends ConsumerState<TransactionForm> {
     );
   }
 
-  Widget _categoryAndAccountRow(List<Category> categories, List<Account> accounts) {
+  Widget _categoryAndAccountRow(
+    List<Category> categories,
+    List<Account> accounts,
+  ) {
     final categoryNames = {for (final c in categories) c.id: c.name};
     final accountNames = {for (final a in accounts) a.id: a.name};
     return _pair(
@@ -248,7 +276,11 @@ class _TransactionFormState extends ConsumerState<TransactionForm> {
           items: accountNames.keys.toList(),
           value: _accountId!,
           labelOf: (id) => accountNames[id]!,
-          onChanged: (id) => setState(() => _accountId = id),
+          // Switching account also switches to that account's currency.
+          onChanged: (id) => setState(() {
+            _accountId = id;
+            _currency = accounts.firstWhere((a) => a.id == id).currency;
+          }),
         ),
       ),
     );
@@ -299,7 +331,10 @@ class _TransactionFormState extends ConsumerState<TransactionForm> {
           children: [
             const Text('IMPORTANCE LEVEL', style: AppText.caption),
             const SizedBox(height: 5),
-            RatingPicker(value: _importance, onChanged: (v) => setState(() => _importance = v)),
+            RatingPicker(
+              value: _importance,
+              onChanged: (v) => setState(() => _importance = v),
+            ),
           ],
         ),
       ),

@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:money_tracker/AppItem/common_widgets.dart';
 import 'package:money_tracker/AppItem/date_bar.dart';
+import 'package:money_tracker/AppItem/spending_chart.dart';
 import 'package:money_tracker/AppItem/transaction_card.dart';
 import 'package:money_tracker/AppPages/purchase_info.dart';
 import 'package:money_tracker/data/db/app_database.dart';
 import 'package:money_tracker/state/display_currency.dart';
 import 'package:money_tracker/state/providers.dart';
+import 'package:money_tracker/state/stats_view.dart';
 import 'package:money_tracker/state/view_period.dart';
 
 /// Transaction history for the selected period.
@@ -52,49 +54,58 @@ class _MyStatsPageState extends ConsumerState<MyStatsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final transactions = ref.watch(transactionsInPeriodProvider);
-    final displayCurrency = ref.watch(displayCurrencyProvider);
-    final exponents = ref.watch(currencyExponentsProvider);
-
     return SafeArea(
       child: Column(
         children: [
           const MyDateBar(),
           Expanded(
-            child: transactions.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error: $e')),
-              data: (rows) {
-                if (rows.isEmpty) return const EmptyState();
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 20),
-                  itemCount: rows.length,
-                  itemBuilder: (context, index) {
-                    final item = rows[index];
-                    return GestureDetector(
-                      onTapDown: (details) => _tapPosition = details.globalPosition,
-                      onTap: () => _openDetails(item.t),
-                      onLongPress: () => _showContextMenu(item.t.id),
-                      onDoubleTap: () => _showContextMenu(item.t.id),
-                      child: TransactionCard(
-                        item: item,
-                        amountText: formatForDisplay(
-                          minor: item.t.amountMinor,
-                          currency: item.t.currency,
-                          displayCurrency: displayCurrency,
-                          exponents: exponents,
-                        ),
-                        onToggleStar: () =>
-                            ref.read(transactionRepositoryProvider).toggleStar(item.t.id),
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
+            // The list/chart button in the date bar flips this.
+            child: switch (ref.watch(statsViewProvider)) {
+              StatsView.list => _transactionList(),
+              StatsView.chart => const SpendingChart(),
+            },
           ),
         ],
       ),
+    );
+  }
+
+  Widget _transactionList() {
+    final transactions = ref.watch(transactionsInPeriodProvider);
+    final displayCurrency = ref.watch(displayCurrencyProvider);
+    final exponents = ref.watch(currencyExponentsProvider);
+
+    return transactions.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(child: Text('Error: $e')),
+      data: (rows) {
+        if (rows.isEmpty) return const EmptyState();
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 20),
+          itemCount: rows.length,
+          itemBuilder: (context, index) {
+            final item = rows[index];
+            return GestureDetector(
+              onTapDown: (details) => _tapPosition = details.globalPosition,
+              onTap: () => _openDetails(item.t),
+              onLongPress: () => _showContextMenu(item.t.id),
+              onDoubleTap: () => _showContextMenu(item.t.id),
+              child: TransactionCard(
+                item: item,
+                amountText: formatForDisplay(
+                  minor: item.t.amountMinor,
+                  currency: item.t.currency,
+                  displayCurrency: displayCurrency,
+                  exponents: exponents,
+                ),
+                onToggleStar: () => ref
+                    .read(transactionRepositoryProvider)
+                    .toggleStar(item.t.id),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

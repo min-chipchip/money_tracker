@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:money_tracker/AppAPI/currency_provider.dart';
 import 'package:money_tracker/AppItem/app_theme.dart';
 import 'package:money_tracker/AppPages/home.dart';
-import 'package:money_tracker/AppPages/insights.dart';
+import 'package:money_tracker/AppPages/accounts.dart';
 import 'package:money_tracker/AppPages/qna.dart';
 import 'package:money_tracker/AppPages/receipt.dart';
 import 'package:money_tracker/AppPages/settings.dart';
@@ -37,7 +37,7 @@ class _HomeState extends State<Home> {
   static const List<Widget> _pages = [
     MyHomeForm(),
     MyStatsPage(),
-    MyInsightsForm(),
+    AccountsPage(),
     MyReceiptForm(),
     MyQnAForm(),
     MySettingsForm(),
@@ -57,10 +57,19 @@ class _HomeState extends State<Home> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(icon: Icon(Icons.pie_chart), label: 'Stats'),
-          BottomNavigationBarItem(icon: Icon(Icons.lightbulb), label: 'Insights'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.account_balance_wallet),
+            label: 'Accounts',
+          ),
           BottomNavigationBarItem(icon: Icon(Icons.receipt), label: 'Receipt'),
-          BottomNavigationBarItem(icon: Icon(Icons.question_answer), label: 'QnA'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.question_answer),
+            label: 'QnA',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Settings',
+          ),
         ],
       ),
     );

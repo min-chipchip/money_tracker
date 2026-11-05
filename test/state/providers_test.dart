@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:money_tracker/state/providers.dart';
+import 'package:money_tracker/state/stats_view.dart';
 import 'package:money_tracker/state/transaction_actions.dart';
 import 'package:money_tracker/state/view_period.dart';
 
@@ -45,6 +46,32 @@ void main() {
     container.read(viewPeriodProvider.notifier).previous();
     final lastMonth = await container.read(transactionsInPeriodProvider.future);
     expect(lastMonth.single.t.amountMinor, 200);
+  });
+
+  test('a new account appears in accountsProvider (what Home and Accounts watch)', () async {
+    container.listen(accountsProvider, (_, _) {});
+    expect(await container.read(accountsProvider.future), hasLength(3));
+
+    await container.read(accountRepositoryProvider).add(
+          name: 'Travel Card',
+          kind: 'credit_card',
+          currency: 'JPY',
+          openingBalanceMinor: -5000,
+        );
+    // Let drift's stream notice the insert and re-run the query.
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+
+    final accounts = await container.read(accountsProvider.future);
+    expect(accounts.last.a.name, 'Travel Card', reason: 'new accounts sort last');
+    final travel = accounts.singleWhere((r) => r.a.name == 'Travel Card');
+    expect(travel.a.currency, 'JPY');
+    expect(travel.balanceMinor, -5000);
+  });
+
+  test('stats view toggles between list and chart', () {
+    expect(container.read(statsViewProvider), StatsView.list);
+    container.read(statsViewProvider.notifier).toggle();
+    expect(container.read(statsViewProvider), StatsView.chart);
   });
 
   test('saving a foreign currency without live rates is refused clearly', () async {

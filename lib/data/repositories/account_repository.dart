@@ -24,12 +24,18 @@ class AccountRepository {
   }) async {
     final id = newId();
     final now = _now;
+    // New accounts go to the end of the list: SELECT MAX(sort_order) + 1.
+    final maxOrder = _db.accounts.sortOrder.max();
+    final lastOrder = await (_db.selectOnly(_db.accounts)..addColumns([maxOrder]))
+        .map((row) => row.read(maxOrder))
+        .getSingle();
     await _db.into(_db.accounts).insert(AccountsCompanion.insert(
           id: id,
           name: name.trim(),
           kind: kind,
           currency: currency,
           openingBalanceMinor: Value(openingBalanceMinor),
+          sortOrder: Value((lastOrder ?? -1) + 1),
           createdAt: now,
           updatedAt: now,
         ));
