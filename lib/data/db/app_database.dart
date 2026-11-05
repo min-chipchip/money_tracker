@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:money_tracker/core/ids.dart';
+import 'package:money_tracker/data/db/app_database.steps.dart';
 
 part 'app_database.g.dart';
 
@@ -12,33 +13,76 @@ part 'app_database.g.dart';
 ///
 ///     dart run build_runner build
 ///
-/// This is a NEW database file (`money_tracker_v2`). The old sqflite
-/// database (`money_tracker.db`) is left untouched until we migrate the UI.
+/// The file is called `money_tracker_v2` (v2 of the APP, not of the schema;
+/// the schema version is [schemaVersion]).
 @DriftDatabase(include: {'schema.drift', 'queries.drift'})
 class AppDatabase extends _$AppDatabase {
   /// Pass an executor in tests, e.g. `AppDatabase(NativeDatabase.memory())`.
   AppDatabase([QueryExecutor? executor])
       : super(executor ?? driftDatabase(name: 'money_tracker_v2'));
 
-  /// Bump this whenever the schema changes, and add a migration step below.
+  /// Bump this whenever the schema changes, then run
+  /// `dart run drift_dev make-migrations` to snapshot the new version and
+  /// regenerate app_database.steps.dart, and add the new step below.
   /// Never edit a migration that has already shipped.
+  ///
+  /// History:
+  ///   1 — initial schema
+  ///   2 — exchange_rates (offline currency conversion)
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
+        // Brand-new install: create the latest schema directly.
         onCreate: (m) async {
           await m.createAll();
           await _seedDefaults();
+          await _seedApproximateRates();
         },
-        // Future schema changes go here, e.g.:
-        // onUpgrade: stepByStep(from1To2: (m, schema) async { ... }),
+        // Existing install: walk version by version (1→2, later 2→3, ...).
+        // `schema` is a frozen snapshot of that version, so old steps keep
+        // working even after later versions change the tables again.
+        onUpgrade: stepByStep(
+          from1To2: (m, schema) async {
+            await m.createTable(schema.exchangeRates);
+            await _seedApproximateRates();
+          },
+        ),
         beforeOpen: (details) async {
           // SQLite ignores REFERENCES constraints unless this is switched on,
           // and it has to be switched on for every new connection.
           await customStatement('PRAGMA foreign_keys = ON');
         },
       );
+
+  /// Rough, hand-picked "1 USD = x" values so conversion works offline
+  /// before the first successful API fetch. They are marked source='seed'
+  /// and get superseded by newer 'api' rows as soon as the API is reachable.
+  /// NOT live market rates.
+  static const approximatePerUsd = {
+    'USD': 1.0,
+    'HKD': 7.78,
+    'EUR': 0.92,
+    'AUD': 1.53,
+    'JPY': 150.0,
+  };
+
+  /// Raw SQL on purpose: migrations must not depend on today's generated
+  /// classes, which will keep changing as the schema evolves.
+  /// Dated 2000-01-01 so it is the fallback for any transaction date, and any
+  /// real API rate (dated today) counts as newer.
+  Future<void> _seedApproximateRates() async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    for (final MapEntry(key: code, value: rate) in approximatePerUsd.entries) {
+      await customStatement(
+        'INSERT OR IGNORE INTO exchange_rates '
+        '(rate_date, quote, per_usd, source, fetched_at) '
+        "VALUES ('2000-01-01', ?, ?, 'seed', ?)",
+        [code, rate, now],
+      );
+    }
+  }
 
   /// Starter data written once, when the database file is first created.
   Future<void> _seedDefaults() async {

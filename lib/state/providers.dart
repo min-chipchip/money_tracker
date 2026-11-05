@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:money_tracker/data/db/app_database.dart';
 import 'package:money_tracker/data/repositories/account_repository.dart';
 import 'package:money_tracker/data/repositories/category_repository.dart';
+import 'package:money_tracker/data/repositories/fx_repository.dart';
 import 'package:money_tracker/data/repositories/settings_repository.dart';
 import 'package:money_tracker/data/repositories/transaction_repository.dart';
 
@@ -27,6 +28,8 @@ final accountRepositoryProvider =
     Provider((ref) => AccountRepository(ref.watch(databaseProvider)));
 final categoryRepositoryProvider =
     Provider((ref) => CategoryRepository(ref.watch(databaseProvider)));
+final fxRepositoryProvider =
+    Provider((ref) => FxRepository(ref.watch(databaseProvider)));
 final settingsRepositoryProvider =
     Provider((ref) => SettingsRepository(ref.watch(databaseProvider)));
 
@@ -53,3 +56,8 @@ final currencyExponentsProvider = Provider<Map<String, int>>((ref) {
 
 final baseCurrencyProvider =
     StreamProvider((ref) => ref.watch(settingsRepositoryProvider).watchBaseCurrency());
+
+/// Latest exchange rates from the database (works offline). Updates
+/// automatically when a fresh API fetch is saved.
+final fxRatesProvider =
+    StreamProvider((ref) => ref.watch(fxRepositoryProvider).watchLatest());

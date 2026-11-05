@@ -23,7 +23,7 @@ class SpendingChart extends ConsumerWidget {
     final exponents = ref.watch(currencyExponentsProvider);
 
     // Totals are stored in the base currency; convert for display if we can.
-    final rate = liveRate(base, display);
+    final rate = ref.watch(fxRatesProvider).value?.rate(base, display);
     final shownCurrency = rate == null ? base : display;
     double toShown(int baseMinor) =>
         baseMinor / math.pow(10, exponents[base] ?? 2) * (rate ?? 1);

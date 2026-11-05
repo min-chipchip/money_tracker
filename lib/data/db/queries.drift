@@ -54,3 +54,14 @@ LEFT JOIN account_movements m ON m.account_id = a.id
 WHERE a.deleted_at IS NULL
 GROUP BY a.id
 ORDER BY a.sort_order, a.name;
+
+-- For each currency: the most recent rate on or before :date.
+-- (A "correlated subquery": the inner SELECT runs per row of the outer one,
+-- using that row's e.quote.) Pass '9999-12-31' for "latest available".
+ratesOn:
+SELECT e.quote, e.per_usd, e.rate_date, e.source
+FROM exchange_rates e
+WHERE e.rate_date = (
+  SELECT MAX(r.rate_date) FROM exchange_rates r
+  WHERE r.quote = e.quote AND r.rate_date <= :date
+);

@@ -74,11 +74,14 @@ void main() {
     expect(container.read(statsViewProvider), StatsView.chart);
   });
 
-  test('saving a foreign currency without live rates is refused clearly', () async {
-    final actions = container.read(transactionActionsProvider);
-    expect(
-      () => actions.save(draft(500, DateTime.now(), currency: 'USD')),
-      throwsA(isA<MissingExchangeRate>()),
-    );
+  test('a foreign currency saves offline using the cached rate', () async {
+    final now = DateTime.now();
+    await container.read(transactionActionsProvider).save(draft(500, now, currency: 'USD'));
+
+    container.listen(transactionsInPeriodProvider, (_, _) {});
+    final saved = (await container.read(transactionsInPeriodProvider.future)).single.t;
+    expect(saved.currency, 'USD');
+    expect(saved.fxRateToBase, 7.78); // approximate seed rate USD→HKD
+    expect(saved.baseAmountMinor, 3890); // $5.00 × 7.78 = HK$38.90
   });
 }

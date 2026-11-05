@@ -74,6 +74,7 @@ class _MyStatsPageState extends ConsumerState<MyStatsPage> {
     final transactions = ref.watch(transactionsInPeriodProvider);
     final displayCurrency = ref.watch(displayCurrencyProvider);
     final exponents = ref.watch(currencyExponentsProvider);
+    final rates = ref.watch(fxRatesProvider).value;
 
     return transactions.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -97,6 +98,7 @@ class _MyStatsPageState extends ConsumerState<MyStatsPage> {
                   currency: item.t.currency,
                   displayCurrency: displayCurrency,
                   exponents: exponents,
+                  rates: rates,
                 ),
                 onToggleStar: () => ref
                     .read(transactionRepositoryProvider)

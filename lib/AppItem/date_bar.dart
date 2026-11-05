@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:money_tracker/AppItem/app_theme.dart';
 import 'package:money_tracker/state/display_currency.dart';
+import 'package:money_tracker/state/providers.dart';
 import 'package:money_tracker/state/stats_view.dart';
 import 'package:money_tracker/state/view_period.dart';
 
@@ -19,6 +20,7 @@ class MyDateBar extends ConsumerWidget {
     final periodNotifier = ref.read(viewPeriodProvider.notifier);
     final displayCurrency = ref.watch(displayCurrencyProvider);
     final view = ref.watch(statsViewProvider);
+    final approximate = ref.watch(fxRatesProvider).value?.approximate ?? true;
 
     return Column(
       children: [
@@ -66,7 +68,16 @@ class MyDateBar extends ConsumerWidget {
               icon: const Icon(Icons.attach_money, color: AppColors.primary),
               onPressed: ref.read(displayCurrencyProvider.notifier).toggle,
             ),
-            Text(displayCurrency, style: AppText.strong),
+            // "≈ HKD" while only the built-in approximate rates are known.
+            Tooltip(
+              message: approximate
+                  ? 'Using approximate exchange rates (offline)'
+                  : 'Using latest downloaded exchange rates',
+              child: Text(
+                '${approximate ? '≈ ' : ''}$displayCurrency',
+                style: AppText.strong,
+              ),
+            ),
             const SizedBox(width: 8),
             IconButton(
               tooltip: view == StatsView.list ? 'Show chart' : 'Show list',

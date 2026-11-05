@@ -1,0 +1,11 @@
+targets:
+  $default:
+    builders:
+      drift_dev:
+        options:
+          databases:
+            # name: path to the database class
+            app_database: lib/data/db/app_database.dart
+          # Snapshots of every schema version, used to generate migration tests.
+          schema_dir: drift_schemas/
+          test_dir: test/drift/

@@ -143,3 +143,18 @@ CREATE VIEW account_movements AS
   SELECT to_account_id AS account_id, occurred_on, to_amount_minor AS delta_minor
   FROM transactions
   WHERE type = 'transfer' AND deleted_at IS NULL;
+
+-- ---------------------------------------------------------------- v2 ------
+-- Cached exchange rates, so conversion works offline.
+-- One row per (date, currency), all relative to USD:
+--   1 USD = per_usd units of `quote`.
+-- Any pair can be derived: 1 JPY in HKD = per_usd[HKD] / per_usd[JPY].
+-- source: 'seed' = approximate built-in values, 'api' = fetched from the API.
+CREATE TABLE exchange_rates (
+  rate_date   TEXT NOT NULL,                              -- 'YYYY-MM-DD'
+  quote       TEXT NOT NULL REFERENCES currencies(code),
+  per_usd     REAL NOT NULL CHECK (per_usd > 0),
+  source      TEXT NOT NULL CHECK (source IN ('seed', 'api')),
+  fetched_at  INTEGER NOT NULL,
+  PRIMARY KEY (rate_date, quote)
+) AS ExchangeRate;

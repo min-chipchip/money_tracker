@@ -2648,6 +2648,373 @@ class AccountMovements extends ViewInfo<AccountMovements, AccountMovement>
   Set<String> get readTables => const {'transactions'};
 }
 
+class ExchangeRates extends Table with TableInfo<ExchangeRates, ExchangeRate> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  ExchangeRates(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _rateDateMeta = const VerificationMeta(
+    'rateDate',
+  );
+  late final GeneratedColumn<String> rateDate = GeneratedColumn<String>(
+    'rate_date',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  static const VerificationMeta _quoteMeta = const VerificationMeta('quote');
+  late final GeneratedColumn<String> quote = GeneratedColumn<String>(
+    'quote',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL REFERENCES currencies(code)',
+  );
+  static const VerificationMeta _perUsdMeta = const VerificationMeta('perUsd');
+  late final GeneratedColumn<double> perUsd = GeneratedColumn<double>(
+    'per_usd',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL CHECK (per_usd > 0)',
+  );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL CHECK (source IN (\'seed\', \'api\'))',
+  );
+  static const VerificationMeta _fetchedAtMeta = const VerificationMeta(
+    'fetchedAt',
+  );
+  late final GeneratedColumn<int> fetchedAt = GeneratedColumn<int>(
+    'fetched_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    rateDate,
+    quote,
+    perUsd,
+    source,
+    fetchedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'exchange_rates';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ExchangeRate> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('rate_date')) {
+      context.handle(
+        _rateDateMeta,
+        rateDate.isAcceptableOrUnknown(data['rate_date']!, _rateDateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_rateDateMeta);
+    }
+    if (data.containsKey('quote')) {
+      context.handle(
+        _quoteMeta,
+        quote.isAcceptableOrUnknown(data['quote']!, _quoteMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_quoteMeta);
+    }
+    if (data.containsKey('per_usd')) {
+      context.handle(
+        _perUsdMeta,
+        perUsd.isAcceptableOrUnknown(data['per_usd']!, _perUsdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_perUsdMeta);
+    }
+    if (data.containsKey('source')) {
+      context.handle(
+        _sourceMeta,
+        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceMeta);
+    }
+    if (data.containsKey('fetched_at')) {
+      context.handle(
+        _fetchedAtMeta,
+        fetchedAt.isAcceptableOrUnknown(data['fetched_at']!, _fetchedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_fetchedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {rateDate, quote};
+  @override
+  ExchangeRate map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ExchangeRate(
+      rateDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}rate_date'],
+      )!,
+      quote: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}quote'],
+      )!,
+      perUsd: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}per_usd'],
+      )!,
+      source: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source'],
+      )!,
+      fetchedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}fetched_at'],
+      )!,
+    );
+  }
+
+  @override
+  ExchangeRates createAlias(String alias) {
+    return ExchangeRates(attachedDatabase, alias);
+  }
+
+  @override
+  List<String> get customConstraints => const ['PRIMARY KEY(rate_date, quote)'];
+  @override
+  bool get dontWriteConstraints => true;
+}
+
+class ExchangeRate extends DataClass implements Insertable<ExchangeRate> {
+  final String rateDate;
+
+  /// 'YYYY-MM-DD'
+  final String quote;
+  final double perUsd;
+  final String source;
+  final int fetchedAt;
+  const ExchangeRate({
+    required this.rateDate,
+    required this.quote,
+    required this.perUsd,
+    required this.source,
+    required this.fetchedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['rate_date'] = Variable<String>(rateDate);
+    map['quote'] = Variable<String>(quote);
+    map['per_usd'] = Variable<double>(perUsd);
+    map['source'] = Variable<String>(source);
+    map['fetched_at'] = Variable<int>(fetchedAt);
+    return map;
+  }
+
+  ExchangeRatesCompanion toCompanion(bool nullToAbsent) {
+    return ExchangeRatesCompanion(
+      rateDate: Value(rateDate),
+      quote: Value(quote),
+      perUsd: Value(perUsd),
+      source: Value(source),
+      fetchedAt: Value(fetchedAt),
+    );
+  }
+
+  factory ExchangeRate.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ExchangeRate(
+      rateDate: serializer.fromJson<String>(json['rate_date']),
+      quote: serializer.fromJson<String>(json['quote']),
+      perUsd: serializer.fromJson<double>(json['per_usd']),
+      source: serializer.fromJson<String>(json['source']),
+      fetchedAt: serializer.fromJson<int>(json['fetched_at']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'rate_date': serializer.toJson<String>(rateDate),
+      'quote': serializer.toJson<String>(quote),
+      'per_usd': serializer.toJson<double>(perUsd),
+      'source': serializer.toJson<String>(source),
+      'fetched_at': serializer.toJson<int>(fetchedAt),
+    };
+  }
+
+  ExchangeRate copyWith({
+    String? rateDate,
+    String? quote,
+    double? perUsd,
+    String? source,
+    int? fetchedAt,
+  }) => ExchangeRate(
+    rateDate: rateDate ?? this.rateDate,
+    quote: quote ?? this.quote,
+    perUsd: perUsd ?? this.perUsd,
+    source: source ?? this.source,
+    fetchedAt: fetchedAt ?? this.fetchedAt,
+  );
+  ExchangeRate copyWithCompanion(ExchangeRatesCompanion data) {
+    return ExchangeRate(
+      rateDate: data.rateDate.present ? data.rateDate.value : this.rateDate,
+      quote: data.quote.present ? data.quote.value : this.quote,
+      perUsd: data.perUsd.present ? data.perUsd.value : this.perUsd,
+      source: data.source.present ? data.source.value : this.source,
+      fetchedAt: data.fetchedAt.present ? data.fetchedAt.value : this.fetchedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ExchangeRate(')
+          ..write('rateDate: $rateDate, ')
+          ..write('quote: $quote, ')
+          ..write('perUsd: $perUsd, ')
+          ..write('source: $source, ')
+          ..write('fetchedAt: $fetchedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(rateDate, quote, perUsd, source, fetchedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ExchangeRate &&
+          other.rateDate == this.rateDate &&
+          other.quote == this.quote &&
+          other.perUsd == this.perUsd &&
+          other.source == this.source &&
+          other.fetchedAt == this.fetchedAt);
+}
+
+class ExchangeRatesCompanion extends UpdateCompanion<ExchangeRate> {
+  final Value<String> rateDate;
+  final Value<String> quote;
+  final Value<double> perUsd;
+  final Value<String> source;
+  final Value<int> fetchedAt;
+  final Value<int> rowid;
+  const ExchangeRatesCompanion({
+    this.rateDate = const Value.absent(),
+    this.quote = const Value.absent(),
+    this.perUsd = const Value.absent(),
+    this.source = const Value.absent(),
+    this.fetchedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ExchangeRatesCompanion.insert({
+    required String rateDate,
+    required String quote,
+    required double perUsd,
+    required String source,
+    required int fetchedAt,
+    this.rowid = const Value.absent(),
+  }) : rateDate = Value(rateDate),
+       quote = Value(quote),
+       perUsd = Value(perUsd),
+       source = Value(source),
+       fetchedAt = Value(fetchedAt);
+  static Insertable<ExchangeRate> custom({
+    Expression<String>? rateDate,
+    Expression<String>? quote,
+    Expression<double>? perUsd,
+    Expression<String>? source,
+    Expression<int>? fetchedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (rateDate != null) 'rate_date': rateDate,
+      if (quote != null) 'quote': quote,
+      if (perUsd != null) 'per_usd': perUsd,
+      if (source != null) 'source': source,
+      if (fetchedAt != null) 'fetched_at': fetchedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ExchangeRatesCompanion copyWith({
+    Value<String>? rateDate,
+    Value<String>? quote,
+    Value<double>? perUsd,
+    Value<String>? source,
+    Value<int>? fetchedAt,
+    Value<int>? rowid,
+  }) {
+    return ExchangeRatesCompanion(
+      rateDate: rateDate ?? this.rateDate,
+      quote: quote ?? this.quote,
+      perUsd: perUsd ?? this.perUsd,
+      source: source ?? this.source,
+      fetchedAt: fetchedAt ?? this.fetchedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (rateDate.present) {
+      map['rate_date'] = Variable<String>(rateDate.value);
+    }
+    if (quote.present) {
+      map['quote'] = Variable<String>(quote.value);
+    }
+    if (perUsd.present) {
+      map['per_usd'] = Variable<double>(perUsd.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
+    if (fetchedAt.present) {
+      map['fetched_at'] = Variable<int>(fetchedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ExchangeRatesCompanion(')
+          ..write('rateDate: $rateDate, ')
+          ..write('quote: $quote, ')
+          ..write('perUsd: $perUsd, ')
+          ..write('source: $source, ')
+          ..write('fetchedAt: $fetchedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class Settings extends Table with TableInfo<Settings, Setting> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -3455,6 +3822,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final Categories categories = Categories(this);
   late final Transactions transactions = Transactions(this);
   late final AccountMovements accountMovements = AccountMovements(this);
+  late final ExchangeRates exchangeRates = ExchangeRates(this);
   late final Settings settings = Settings(this);
   late final Index uxCategoriesName = Index(
     'ux_categories_name',
@@ -3539,6 +3907,21 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     );
   }
 
+  Selectable<RatesOnResult> ratesOn(String date) {
+    return customSelect(
+      'SELECT e.quote, e.per_usd, e.rate_date, e.source FROM exchange_rates AS e WHERE e.rate_date = (SELECT MAX(r.rate_date) FROM exchange_rates AS r WHERE r.quote = e.quote AND r.rate_date <= ?1)',
+      variables: [Variable<String>(date)],
+      readsFrom: {exchangeRates},
+    ).map(
+      (QueryRow row) => RatesOnResult(
+        quote: row.read<String>('quote'),
+        perUsd: row.read<double>('per_usd'),
+        rateDate: row.read<String>('rate_date'),
+        source: row.read<String>('source'),
+      ),
+    );
+  }
+
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3549,6 +3932,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     categories,
     transactions,
     accountMovements,
+    exchangeRates,
     settings,
     uxCategoriesName,
     ixTxDate,
@@ -3632,6 +4016,24 @@ final class $CurrenciesReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<ExchangeRates, List<ExchangeRate>>
+  _exchangeRatesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.exchangeRates,
+    aliasName: 'currencies__code__exchange_rates__quote',
+  );
+
+  $ExchangeRatesProcessedTableManager get exchangeRatesRefs {
+    final manager = $ExchangeRatesTableManager(
+      $_db,
+      $_db.exchangeRates,
+    ).filter((f) => f.quote.code.sqlEquals($_itemColumn<String>('code')!));
+
+    final cache = $_typedResult.readTableOrNull(_exchangeRatesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $CurrenciesFilterComposer extends Composer<_$AppDatabase, Currencies> {
@@ -3698,6 +4100,31 @@ class $CurrenciesFilterComposer extends Composer<_$AppDatabase, Currencies> {
           }) => $TransactionsFilterComposer(
             $db: $db,
             $table: $db.transactions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> exchangeRatesRefs(
+    Expression<bool> Function($ExchangeRatesFilterComposer f) f,
+  ) {
+    final $ExchangeRatesFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.code,
+      referencedTable: $db.exchangeRates,
+      getReferencedColumn: (t) => t.quote,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ExchangeRatesFilterComposer(
+            $db: $db,
+            $table: $db.exchangeRates,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -3799,6 +4226,31 @@ class $CurrenciesAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> exchangeRatesRefs<T extends Object>(
+    Expression<T> Function($ExchangeRatesAnnotationComposer a) f,
+  ) {
+    final $ExchangeRatesAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.code,
+      referencedTable: $db.exchangeRates,
+      getReferencedColumn: (t) => t.quote,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $ExchangeRatesAnnotationComposer(
+            $db: $db,
+            $table: $db.exchangeRates,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $CurrenciesTableManager
@@ -3814,7 +4266,11 @@ class $CurrenciesTableManager
           $CurrenciesUpdateCompanionBuilder,
           (CurrencyInfo, $CurrenciesReferences),
           CurrencyInfo,
-          PrefetchHooks Function({bool accountsRefs, bool transactionsRefs})
+          PrefetchHooks Function({
+            bool accountsRefs,
+            bool transactionsRefs,
+            bool exchangeRatesRefs,
+          })
         > {
   $CurrenciesTableManager(_$AppDatabase db, Currencies table)
     : super(
@@ -3858,12 +4314,17 @@ class $CurrenciesTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({accountsRefs = false, transactionsRefs = false}) {
+              ({
+                accountsRefs = false,
+                transactionsRefs = false,
+                exchangeRatesRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (accountsRefs) db.accounts,
                     if (transactionsRefs) db.transactions,
+                    if (exchangeRatesRefs) db.exchangeRates,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -3905,6 +4366,26 @@ class $CurrenciesTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (exchangeRatesRefs)
+                        await $_getPrefetchedData<
+                          CurrencyInfo,
+                          Currencies,
+                          ExchangeRate
+                        >(
+                          currentTable: table,
+                          referencedTable: $CurrenciesReferences
+                              ._exchangeRatesRefsTable(db),
+                          managerFromTypedResult: (p0) => $CurrenciesReferences(
+                            db,
+                            table,
+                            p0,
+                          ).exchangeRatesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.quote == item.code,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -3925,7 +4406,11 @@ typedef $CurrenciesProcessedTableManager =
       $CurrenciesUpdateCompanionBuilder,
       (CurrencyInfo, $CurrenciesReferences),
       CurrencyInfo,
-      PrefetchHooks Function({bool accountsRefs, bool transactionsRefs})
+      PrefetchHooks Function({
+        bool accountsRefs,
+        bool transactionsRefs,
+        bool exchangeRatesRefs,
+      })
     >;
 typedef $AccountsCreateCompanionBuilder =
     AccountsCompanion Function({
@@ -5668,6 +6153,323 @@ typedef $TransactionsProcessedTableManager =
         bool transactionTagsRefs,
       })
     >;
+typedef $ExchangeRatesCreateCompanionBuilder =
+    ExchangeRatesCompanion Function({
+      required String rateDate,
+      required String quote,
+      required double perUsd,
+      required String source,
+      required int fetchedAt,
+      Value<int> rowid,
+    });
+typedef $ExchangeRatesUpdateCompanionBuilder =
+    ExchangeRatesCompanion Function({
+      Value<String> rateDate,
+      Value<String> quote,
+      Value<double> perUsd,
+      Value<String> source,
+      Value<int> fetchedAt,
+      Value<int> rowid,
+    });
+
+final class $ExchangeRatesReferences
+    extends BaseReferences<_$AppDatabase, ExchangeRates, ExchangeRate> {
+  $ExchangeRatesReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static Currencies _quoteTable(_$AppDatabase db) =>
+      db.currencies.createAlias('exchange_rates__quote__currencies__code');
+
+  $CurrenciesProcessedTableManager get quote {
+    final $_column = $_itemColumn<String>('quote')!;
+
+    final manager = $CurrenciesTableManager(
+      $_db,
+      $_db.currencies,
+    ).filter((f) => f.code.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_quoteTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $ExchangeRatesFilterComposer
+    extends Composer<_$AppDatabase, ExchangeRates> {
+  $ExchangeRatesFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get rateDate => $composableBuilder(
+    column: $table.rateDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get perUsd => $composableBuilder(
+    column: $table.perUsd,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get fetchedAt => $composableBuilder(
+    column: $table.fetchedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $CurrenciesFilterComposer get quote {
+    final $CurrenciesFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.quote,
+      referencedTable: $db.currencies,
+      getReferencedColumn: (t) => t.code,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $CurrenciesFilterComposer(
+            $db: $db,
+            $table: $db.currencies,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $ExchangeRatesOrderingComposer
+    extends Composer<_$AppDatabase, ExchangeRates> {
+  $ExchangeRatesOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get rateDate => $composableBuilder(
+    column: $table.rateDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get perUsd => $composableBuilder(
+    column: $table.perUsd,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get fetchedAt => $composableBuilder(
+    column: $table.fetchedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $CurrenciesOrderingComposer get quote {
+    final $CurrenciesOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.quote,
+      referencedTable: $db.currencies,
+      getReferencedColumn: (t) => t.code,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $CurrenciesOrderingComposer(
+            $db: $db,
+            $table: $db.currencies,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $ExchangeRatesAnnotationComposer
+    extends Composer<_$AppDatabase, ExchangeRates> {
+  $ExchangeRatesAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get rateDate =>
+      $composableBuilder(column: $table.rateDate, builder: (column) => column);
+
+  GeneratedColumn<double> get perUsd =>
+      $composableBuilder(column: $table.perUsd, builder: (column) => column);
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+
+  GeneratedColumn<int> get fetchedAt =>
+      $composableBuilder(column: $table.fetchedAt, builder: (column) => column);
+
+  $CurrenciesAnnotationComposer get quote {
+    final $CurrenciesAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.quote,
+      referencedTable: $db.currencies,
+      getReferencedColumn: (t) => t.code,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $CurrenciesAnnotationComposer(
+            $db: $db,
+            $table: $db.currencies,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $ExchangeRatesTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          ExchangeRates,
+          ExchangeRate,
+          $ExchangeRatesFilterComposer,
+          $ExchangeRatesOrderingComposer,
+          $ExchangeRatesAnnotationComposer,
+          $ExchangeRatesCreateCompanionBuilder,
+          $ExchangeRatesUpdateCompanionBuilder,
+          (ExchangeRate, $ExchangeRatesReferences),
+          ExchangeRate,
+          PrefetchHooks Function({bool quote})
+        > {
+  $ExchangeRatesTableManager(_$AppDatabase db, ExchangeRates table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $ExchangeRatesFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $ExchangeRatesOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $ExchangeRatesAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> rateDate = const Value.absent(),
+                Value<String> quote = const Value.absent(),
+                Value<double> perUsd = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                Value<int> fetchedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ExchangeRatesCompanion(
+                rateDate: rateDate,
+                quote: quote,
+                perUsd: perUsd,
+                source: source,
+                fetchedAt: fetchedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String rateDate,
+                required String quote,
+                required double perUsd,
+                required String source,
+                required int fetchedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => ExchangeRatesCompanion.insert(
+                rateDate: rateDate,
+                quote: quote,
+                perUsd: perUsd,
+                source: source,
+                fetchedAt: fetchedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $ExchangeRatesReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({quote = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (quote) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.quote,
+                                referencedTable: $ExchangeRatesReferences
+                                    ._quoteTable(db),
+                                referencedColumn: $ExchangeRatesReferences
+                                    ._quoteTable(db)
+                                    .code,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $ExchangeRatesProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      ExchangeRates,
+      ExchangeRate,
+      $ExchangeRatesFilterComposer,
+      $ExchangeRatesOrderingComposer,
+      $ExchangeRatesAnnotationComposer,
+      $ExchangeRatesCreateCompanionBuilder,
+      $ExchangeRatesUpdateCompanionBuilder,
+      (ExchangeRate, $ExchangeRatesReferences),
+      ExchangeRate,
+      PrefetchHooks Function({bool quote})
+    >;
 typedef $SettingsCreateCompanionBuilder =
     SettingsCompanion Function({
       required String key,
@@ -6444,6 +7246,8 @@ class $AppDatabaseManager {
       $CategoriesTableManager(_db, _db.categories);
   $TransactionsTableManager get transactions =>
       $TransactionsTableManager(_db, _db.transactions);
+  $ExchangeRatesTableManager get exchangeRates =>
+      $ExchangeRatesTableManager(_db, _db.exchangeRates);
   $SettingsTableManager get settings =>
       $SettingsTableManager(_db, _db.settings);
   $TagsTableManager get tags => $TagsTableManager(_db, _db.tags);
@@ -6494,4 +7298,17 @@ class AccountBalancesResult {
   final Account a;
   final int balanceMinor;
   AccountBalancesResult({required this.a, required this.balanceMinor});
+}
+
+class RatesOnResult {
+  final String quote;
+  final double perUsd;
+  final String rateDate;
+  final String source;
+  RatesOnResult({
+    required this.quote,
+    required this.perUsd,
+    required this.rateDate,
+    required this.source,
+  });
 }

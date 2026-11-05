@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:money_tracker/AppAPI/currency_provider.dart';
 import 'package:money_tracker/AppItem/app_theme.dart';
 import 'package:money_tracker/AppPages/home.dart';
 import 'package:money_tracker/AppPages/accounts.dart';
@@ -8,10 +7,12 @@ import 'package:money_tracker/AppPages/qna.dart';
 import 'package:money_tracker/AppPages/receipt.dart';
 import 'package:money_tracker/AppPages/settings.dart';
 import 'package:money_tracker/AppPages/stats.dart';
+import 'package:money_tracker/state/providers.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await CurrencyProvider().init(); // Load rates once
+void main() {
+  // No waiting for the network here: the app opens instantly using the
+  // exchange rates cached in the database, and refreshes them in the
+  // background (see _HomeState.initState).
   runApp(
     // ProviderScope holds the state of every Riverpod provider in the app.
     ProviderScope(
@@ -24,15 +25,24 @@ void main() async {
   );
 }
 
-class Home extends StatefulWidget {
+class Home extends ConsumerStatefulWidget {
   const Home({super.key});
 
   @override
-  State<Home> createState() => _HomeState();
+  ConsumerState<Home> createState() => _HomeState();
 }
 
-class _HomeState extends State<Home> {
+class _HomeState extends ConsumerState<Home> {
   int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Fire and forget: if it works, today's rates are saved and every screen
+    // updates via fxRatesProvider; if offline (or no API key), nothing
+    // changes and the cached rates keep working.
+    ref.read(fxRepositoryProvider).refreshFromApi();
+  }
 
   static const List<Widget> _pages = [
     MyHomeForm(),
