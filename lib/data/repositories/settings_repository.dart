@@ -30,6 +30,21 @@ class SettingsRepository {
           .watchSingleOrNull()
           .map((row) => row?.value ?? 'HKD');
 
+  /// The currency amounts are SHOWN in when the app opens.
+  ///
+  /// Not the same as the base currency: the base currency is what
+  /// `base_amount_minor` is stored in (changing it means recomputing every
+  /// transaction), while the main currency is only a display preference.
+  static const mainCurrencyKey = 'main_currency';
+
+  /// Main currency, falling back to the base currency until one is chosen.
+  Stream<String> watchMainCurrency() => _db.select(_db.settings).watch().map((rows) {
+        final values = {for (final r in rows) r.key: r.value};
+        return values[mainCurrencyKey] ?? values[baseCurrencyKey] ?? 'HKD';
+      });
+
+  Future<void> setMainCurrency(String code) => set(mainCurrencyKey, code);
+
   /// Supported currencies (code, decimal places, symbol).
   Stream<List<CurrencyInfo>> watchCurrencies() =>
       (_db.select(_db.currencies)..orderBy([(c) => OrderingTerm(expression: c.code)])).watch();

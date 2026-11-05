@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:money_tracker/state/display_currency.dart';
 import 'package:money_tracker/state/providers.dart';
 import 'package:money_tracker/state/stats_view.dart';
 import 'package:money_tracker/state/transaction_actions.dart';
@@ -66,6 +67,16 @@ void main() {
     final travel = accounts.singleWhere((r) => r.a.name == 'Travel Card');
     expect(travel.a.currency, 'JPY');
     expect(travel.balanceMinor, -5000);
+  });
+
+  test('display currency starts from the saved main currency', () async {
+    container.listen(displayCurrencyProvider, (_, _) {});
+    await container.read(mainCurrencyProvider.future);
+    expect(container.read(displayCurrencyProvider), 'HKD'); // falls back to base
+
+    await container.read(settingsRepositoryProvider).setMainCurrency('JPY');
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    expect(container.read(displayCurrencyProvider), 'JPY');
   });
 
   test('stats view toggles between list and chart', () {

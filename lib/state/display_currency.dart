@@ -7,9 +7,12 @@ import 'package:money_tracker/state/providers.dart';
 
 /// The currency amounts are SHOWN in (the $ button cycles it). Stored values
 /// never change; this only affects display.
+///
+/// It starts as the main currency from Settings, and resets to it whenever
+/// the main currency is changed (because build() watches it).
 class DisplayCurrencyNotifier extends Notifier<String> {
   @override
-  String build() => 'HKD';
+  String build() => ref.watch(mainCurrencyProvider).value ?? 'HKD';
 
   /// Next currency in the currencies table (alphabetical), wrapping around.
   void toggle() {

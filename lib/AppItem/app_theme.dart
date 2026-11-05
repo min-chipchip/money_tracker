@@ -21,6 +21,20 @@ class AppColors {
   static const Color income = Color(0xFF2E7D32); // green 800, readable as text
   static const Color error = Color(0xFFE57373); // red 300
 
+  /// Colors a category can be given (Settings → Categories).
+  static const List<Color> categoryChoices = [
+    Color(0xFF2196F3), // blue
+    Color(0xFFF44336), // red
+    Color(0xFF4CAF50), // green
+    Color(0xFFF9A825), // yellow
+    Color(0xFF9C27B0), // purple
+    Color(0xFFFF9800), // orange
+    Color(0xFF009688), // teal
+    Color(0xFFE91E63), // pink
+    Color(0xFF3F51B5), // indigo
+    Color(0xFF795548), // brown
+  ];
+
   /// Pie chart slice colors, used in order.
   static const List<Color> chart = [
     Colors.blue,

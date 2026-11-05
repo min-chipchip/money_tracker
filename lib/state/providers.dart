@@ -61,3 +61,7 @@ final baseCurrencyProvider =
 /// automatically when a fresh API fetch is saved.
 final fxRatesProvider =
     StreamProvider((ref) => ref.watch(fxRepositoryProvider).watchLatest());
+
+/// The display currency to start with (Settings → Main currency).
+final mainCurrencyProvider =
+    StreamProvider((ref) => ref.watch(settingsRepositoryProvider).watchMainCurrency());
